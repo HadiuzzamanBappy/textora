@@ -12,6 +12,7 @@ export interface SpeechSynthesisState {
   currentChunk: number; // 1-based index
   totalChunks: number;
   progress: number; // 0 to 100
+  isTranslatingChunk: boolean; // True when fetch is in flight
 }
 
 export function useSpeechSynthesis() {
@@ -24,13 +25,14 @@ export function useSpeechSynthesis() {
     currentChunk: 0,
     totalChunks: 0,
     progress: 0,
+    isTranslatingChunk: false,
   });
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const sessionRef = useRef<number>(0);
   const chunksRef = useRef<string[]>([]);
   const currentIndexRef = useRef<number>(0);
-  const playChunkRef = useRef<(index: number, session: number) => void>(() => {});
+  const playChunkRef = useRef<(index: number, session: number, sourceLang?: string, targetLang?: string) => void>(() => {});
 
   // Helper to safely fetch window.speechSynthesis
   const getSynth = useCallback(() => {
@@ -117,6 +119,7 @@ export function useSpeechSynthesis() {
       currentChunk: 0,
       totalChunks: 0,
       progress: 0,
+      isTranslatingChunk: false,
     }));
   }, [getSynth]);
 
@@ -136,7 +139,7 @@ export function useSpeechSynthesis() {
 
   // Plays a single chunk from chunksRef.current at specified index
   const playChunk = useCallback(
-    (index: number, session: number) => {
+    async (index: number, session: number, sourceLang?: string, targetLang?: string) => {
       const synth = getSynth();
       if (!synth) return;
 
@@ -152,6 +155,7 @@ export function useSpeechSynthesis() {
           currentChunk: 0,
           totalChunks: 0,
           progress: 100,
+          isTranslatingChunk: false,
         }));
         return;
       }
@@ -166,8 +170,41 @@ export function useSpeechSynthesis() {
         progress: Math.round((index / chunksRef.current.length) * 100),
       }));
 
-      // Create new synthesis utterance
-      const textToSpeak = chunksRef.current[index];
+      let textToSpeak = chunksRef.current[index];
+
+      // Perform progressive translation chunk-by-chunk if translation parameters are provided
+      if (sourceLang && targetLang && sourceLang !== targetLang) {
+        setState((prev) => ({ ...prev, isTranslatingChunk: true }));
+        try {
+          const response = await fetch("/api/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              text: textToSpeak,
+              sourceLanguage: sourceLang,
+              targetLanguage: targetLang,
+            }),
+          });
+
+          if (session !== sessionRef.current) return;
+
+          if (response.ok) {
+            const data = await response.json();
+            textToSpeak = data.translatedText;
+          } else {
+            console.warn(`Translation failed for chunk index ${index}, falling back to original text.`);
+          }
+        } catch (err) {
+          if (session !== sessionRef.current) return;
+          console.warn(`Network/translation error on chunk index ${index}, falling back to original text.`, err);
+        } finally {
+          if (session !== sessionRef.current) return;
+          setState((prev) => ({ ...prev, isTranslatingChunk: false }));
+        }
+      }
+
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utteranceRef.current = utterance;
 
@@ -179,7 +216,7 @@ export function useSpeechSynthesis() {
       utterance.onend = () => {
         if (session !== sessionRef.current) return;
         currentIndexRef.current = index + 1;
-        playChunkRef.current(currentIndexRef.current, session);
+        playChunkRef.current(currentIndexRef.current, session, sourceLang, targetLang);
       };
 
       utterance.onerror = (event) => {
@@ -192,7 +229,7 @@ export function useSpeechSynthesis() {
 
         // Gracefully recover: move to next chunk
         currentIndexRef.current = index + 1;
-        playChunkRef.current(currentIndexRef.current, session);
+        playChunkRef.current(currentIndexRef.current, session, sourceLang, targetLang);
       };
 
       utterance.onpause = () => {
@@ -210,13 +247,13 @@ export function useSpeechSynthesis() {
     [getSynth, state.selectedVoice, state.speechRate]
   );
 
-  // Keep recursive function pointer reference updated to avoid ESLint early variable access issues
+  // Keep recursive function pointer reference updated
   useEffect(() => {
     playChunkRef.current = playChunk;
   }, [playChunk]);
 
   const speak = useCallback(
-    (text: string, maxChunkSize: number = 200) => {
+    (text: string, maxChunkSize: number = 200, sourceLang?: string, targetLang?: string) => {
       const synth = getSynth();
       if (!synth || !text.trim()) return;
 
@@ -237,7 +274,7 @@ export function useSpeechSynthesis() {
       }
 
       // Begin playing first chunk in queue
-      playChunk(0, currentSession);
+      playChunk(0, currentSession, sourceLang, targetLang);
     },
     [getSynth, playChunk, stop]
   );

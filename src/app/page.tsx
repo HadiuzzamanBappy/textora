@@ -7,20 +7,20 @@ import { useSpeechSynthesis } from "../hooks/useSpeechSynthesis";
 export default function Home() {
   // Source translation states
   const [sourceText, setSourceText] = useState(
-    "Welcome to Textora. This is a premium text-to-speech engine running directly in your browser. Feel free to adjust the voice rate, choose different voices, and set the text chunk size limit!"
+    "Welcome to Textora. This is a premium text-to-speech engine running directly in your browser. Feel free to adjust the voice rate, choose different voices, and set the text chunk size limit!\n\nThis application splits large text documents automatically so the browser doesn't block. It speaks each sentence sequentially, ensuring a smooth and natural listening experience."
   );
   const [sourceLang, setSourceLang] = useState("en");
   const [targetLang, setTargetLang] = useState("es");
   const [translatedText, setTranslatedText] = useState("");
 
-  // Translation request states
+  // Static translation request states
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationError, setTranslationError] = useState<string | null>(null);
 
   // Chunk size limit state
   const [maxChunkSize, setMaxChunkSize] = useState(200);
 
-  // Browser Speech Hook
+  // Browser Speech Hook (integrated with progressive pipeline)
   const {
     isPlaying,
     isPaused,
@@ -30,6 +30,7 @@ export default function Home() {
     currentChunk,
     totalChunks,
     progress,
+    isTranslatingChunk,
     speak,
     pause,
     resume,
@@ -51,7 +52,7 @@ export default function Home() {
     setMaxChunkSize(parseInt(e.target.value, 10));
   };
 
-  // Perform translation request to /api/translate
+  // Perform static full-document translation request to /api/translate
   const handleTranslate = async () => {
     if (!sourceText.trim()) return;
 
@@ -111,7 +112,7 @@ export default function Home() {
             </span>
           </div>
           <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400">
-            Translator & Queue Active
+            Progressive Pipeline Active
           </div>
         </div>
       </header>
@@ -122,13 +123,13 @@ export default function Home() {
         {/* Hero title */}
         <div className="text-center">
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-2">
-            Translate and{" "}
+            Progressive Translation{" "}
             <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              Speak Instantly
+              Pipeline
             </span>
           </h1>
           <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
-            Input source text, translate it server-side, and synthesize the result into speech segments using native browser voices.
+            Speak large text instantly. The pipeline chunks, translates, and synthesizes audio progressively in the background, starting playback immediately.
           </p>
         </div>
 
@@ -182,7 +183,7 @@ export default function Home() {
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                       </svg>
-                      Translate
+                      Translate Full Text
                     </>
                   )}
                 </button>
@@ -199,7 +200,7 @@ export default function Home() {
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <label htmlFor="target-text" className="text-xs font-bold tracking-wider text-slate-400 uppercase">
-                  Translation & Speech
+                  Static Translation Target (Local cache)
                 </label>
                 <select
                   aria-label="Target Language"
@@ -219,7 +220,7 @@ export default function Home() {
                 value={translatedText}
                 onChange={(e) => setTranslatedText(e.target.value)}
                 className="w-full h-48 bg-slate-950/20 border border-slate-850 rounded-xl p-4 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 resize-none text-sm leading-relaxed"
-                placeholder="Translated text will appear here. You can also edit it before speaking..."
+                placeholder="Translated text will appear here. Or trigger the progressive pipeline directly using the buttons below."
               />
 
               <div className="flex justify-between items-center text-xs text-slate-500">
@@ -231,7 +232,7 @@ export default function Home() {
           </div>
 
           {/* Speech Control Drawer */}
-          <div className="bg-slate-950/40 border border-slate-850 rounded-2xl p-6 mt-6 space-y-6">
+          <div className="bg-slate-950/40 border border-slate-855 rounded-2xl p-6 mt-6 space-y-6">
             
             {/* Status & Progress Indicators */}
             <div className="space-y-3">
@@ -250,9 +251,9 @@ export default function Home() {
                     )}
                   </span>
                   <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                    Speech Status:{" "}
+                    Pipeline Status:{" "}
                     <span className={isPlaying && !isPaused ? "text-indigo-400" : isPaused ? "text-amber-400" : "text-slate-400"}>
-                      {isPlaying && !isPaused ? "Speaking" : isPaused ? "Paused" : "Idle"}
+                      {isTranslatingChunk ? "Translating Chunk..." : isPlaying && !isPaused ? "Speaking" : isPaused ? "Paused" : "Idle"}
                     </span>
                   </span>
                 </div>
@@ -268,7 +269,7 @@ export default function Home() {
               {(isPlaying || progress > 0) && (
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs text-slate-400">
-                    <span>Playback Progress</span>
+                    <span>Pipeline Playback Progress</span>
                     <span>{progress}%</span>
                   </div>
                   <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-900">
@@ -356,15 +357,28 @@ export default function Home() {
 
             {/* Playback Trigger Bar */}
             <div className="flex flex-wrap gap-3 justify-center pt-4 border-t border-slate-850">
+              {/* Primary Pipeline action */}
+              <button
+                onClick={() => speak(sourceText, maxChunkSize, sourceLang, targetLang)}
+                disabled={!sourceText.trim() || isTranslating}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+                Translate & Speak Pipeline
+              </button>
+
+              {/* Static target speech synthesis */}
               <button
                 onClick={() => speak(translatedText || sourceText, maxChunkSize)}
                 disabled={!translatedText.trim() && !sourceText.trim()}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+                className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] border border-slate-700"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
-                Speak Output
+                Speak Output Only
               </button>
 
               {isPlaying && !isPaused ? (
