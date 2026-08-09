@@ -467,6 +467,34 @@ export default function Home() {
 
         </div>
 
+        {/* PWA / Browser limits diagnostic section */}
+        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm shadow-xl">
+          <details className="group">
+            <summary className="text-xs font-bold uppercase tracking-wider text-slate-400 cursor-pointer select-none flex items-center justify-between">
+              <span>Platform Limitations & Diagnostics</span>
+              <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="mt-4 text-xs text-slate-400 space-y-3 leading-relaxed border-t border-slate-850 pt-4">
+              <p>
+                <strong>Text-to-Speech (TTS) Engine:</strong> Browser-native audio synthesis runs locally via the Web Speech API (`window.speechSynthesis`). Behavior and features vary by browser and platform:
+              </p>
+              <ul className="list-styled pl-5 space-y-1.5 list-disc">
+                <li>
+                  <strong>iOS Safari / Chrome:</strong> Apple restricts automatic audio playback. You must manually trigger speech with a user gesture (tapping the {"\"Speak\""} buttons). Background playback may stall when the screen locks.
+                </li>
+                <li>
+                  <strong>Voice Options:</strong> Voices are device-specific. Premium voice models (like {"Apple's"} Siri voices or Google{"'s"} neural models) depend on your OS, and Safari/Chrome will load different voice profiles.
+                </li>
+                <li>
+                  <strong>Static vs Pipeline limits:</strong> Full static translation handles text up to 5,000 characters. For larger documents up to 50,000 characters, use the {"\"Translate & Speak Pipeline\""} which segments, translates, and plays sequentially to bypass single-request thresholds.
+                </li>
+              </ul>
+            </div>
+          </details>
+        </div>
+
       </div>
 
       {/* Footer */}
