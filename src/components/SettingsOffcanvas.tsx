@@ -1,5 +1,5 @@
 import React from "react";
-import { Settings, X, Globe, Mic, Volume2, AlignLeft, Check } from "lucide-react";
+import { Settings, X, Globe, Mic, AlignLeft, Check } from "lucide-react";
 import { cn } from "../utils/cn";
 
 interface Voice {
@@ -32,15 +32,6 @@ export function SettingsOffcanvas({
   onClose,
   translationProvider,
   setTranslationProvider,
-  voiceLang,
-  setVoiceLang,
-  voiceLanguages,
-  getLanguageName,
-  filteredVoices,
-  selectedVoice,
-  handleVoiceChange,
-  speechRate,
-  handleRateChange,
   maxChunkSize,
   handleChunkSizeChange,
   isPlaying,
@@ -72,7 +63,7 @@ export function SettingsOffcanvas({
             <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
               <Settings className="w-5 h-5 text-indigo-400" />
             </div>
-            <h2 className="text-base font-bold tracking-wide text-[var(--text-primary)]">Preferences</h2>
+            <h2 className="text-base font-bold tracking-wide text-[var(--text-primary)]">Advanced Settings</h2>
           </div>
           <button
             onClick={onClose}
@@ -86,6 +77,12 @@ export function SettingsOffcanvas({
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 scrollbar-thin scrollbar-thumb-[var(--border-input)] scrollbar-track-transparent">
           
+          <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
+            <p className="text-xs text-indigo-300/80 leading-relaxed">
+              These settings control the underlying engine. Voice selection and speed can now be found on the main player bar at the bottom of your screen.
+            </p>
+          </div>
+
           {/* Translation Section */}
           <section className="space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--border-input)]">
@@ -122,70 +119,11 @@ export function SettingsOffcanvas({
             )}
           </section>
 
-          {/* Speech Synthesis Section */}
+          {/* Engine Parameters Section */}
           <section className="space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--border-input)]">
               <Mic className="w-4 h-4 text-indigo-400" />
-              <span className="text-xs font-bold tracking-widest text-[var(--text-secondary)] uppercase">Speech Synthesis</span>
-            </div>
-
-            <div className="flex flex-col gap-2.5">
-              <label htmlFor="s-voice-lang-select" className="text-sm font-medium text-[var(--text-primary)]">Voice Locale</label>
-              <div className="relative">
-                <select
-                  id="s-voice-lang-select"
-                  value={voiceLang}
-                  onChange={(e) => setVoiceLang(e.target.value)}
-                  className="w-full appearance-none bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 cursor-pointer transition-all shadow-sm"
-                >
-                  {voiceLanguages.map((code) => (
-                    <option key={code} value={code}>{getLanguageName(code)} ({code.toUpperCase()})</option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[var(--text-secondary)]">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2.5">
-              <label htmlFor="s-voice-select" className="text-sm font-medium text-[var(--text-primary)]">Voice Profile</label>
-              <div className="relative">
-                {filteredVoices.length === 0 ? (
-                  <select id="s-voice-select" disabled className="w-full appearance-none bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-muted)] text-sm rounded-xl px-4 py-3 opacity-50 cursor-not-allowed shadow-sm">
-                    <option>No voices found for this locale</option>
-                  </select>
-                ) : (
-                  <select
-                    id="s-voice-select"
-                    value={selectedVoice?.name || ""}
-                    onChange={handleVoiceChange}
-                    className="w-full appearance-none bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 cursor-pointer transition-all shadow-sm"
-                  >
-                    {filteredVoices.map((voice) => (
-                      <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang})</option>
-                    ))}
-                  </select>
-                )}
-                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[var(--text-secondary)]">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Voice Speed Slider */}
-            <div className="flex flex-col gap-3 pt-2">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Volume2 className="w-4 h-4 text-[var(--text-secondary)]" />
-                  <label htmlFor="s-speech-rate" className="text-sm font-medium text-[var(--text-primary)]">Speech Rate</label>
-                </div>
-                <span className="text-sm font-bold text-indigo-400 font-mono bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">{speechRate.toFixed(1)}x</span>
-              </div>
-              <input id="s-speech-rate" type="range" min="0.5" max="2.0" step="0.1" value={speechRate} onChange={handleRateChange} className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all" />
-              <div className="flex justify-between text-[11px] text-[var(--text-muted)] font-mono">
-                <span>0.5x</span><span>2.0x</span>
-              </div>
+              <span className="text-xs font-bold tracking-widest text-[var(--text-secondary)] uppercase">Engine Parameters</span>
             </div>
 
             {/* Text Segmentation Slider */}

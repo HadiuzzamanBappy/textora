@@ -6,9 +6,8 @@ import { useSpeechSynthesis } from "../hooks/useSpeechSynthesis";
 
 import { Header } from "../components/Header";
 import { SettingsOffcanvas } from "../components/SettingsOffcanvas";
-import { SourcePanel } from "../components/SourcePanel";
-import { OutputPanel } from "../components/OutputPanel";
-import { PlaybackControls } from "../components/PlaybackControls";
+import { DocumentReader } from "../components/DocumentReader";
+import { BottomPlayer } from "../components/BottomPlayer";
 import { Info } from "lucide-react";
 
 export default function Home() {
@@ -23,9 +22,12 @@ export default function Home() {
   const [translatedText, setTranslatedText] = useState("");
   const [voiceLang, setVoiceLang] = useState("en");
 
+  // New states for redesign
+  const [translationEnabled, setTranslationEnabled] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(false);
+
   // Background/API state
   const [isTranslating, setIsTranslating] = useState(false);
-  const [translationError, setTranslationError] = useState<string | null>(null);
   const [maxChunkSize, setMaxChunkSize] = useState(200);
   const [translationProvider, setTranslationProvider] = useState<"browser" | "google">("browser");
 
@@ -65,6 +67,10 @@ export default function Home() {
         
         const savedChunkSize = localStorage.getItem("maxChunkSize");
         if (savedChunkSize) setMaxChunkSize(parseInt(savedChunkSize, 10));
+
+        const savedTranslationEnabled = localStorage.getItem("translationEnabled");
+        if (savedTranslationEnabled) setTranslationEnabled(savedTranslationEnabled === "true");
+
       } catch (e) {
         console.error("Failed to load settings", e);
       }
@@ -80,7 +86,8 @@ export default function Home() {
     localStorage.setItem("voiceLang", voiceLang);
     localStorage.setItem("translationProvider", translationProvider);
     localStorage.setItem("maxChunkSize", maxChunkSize.toString());
-  }, [sourceLang, targetLang, voiceLang, translationProvider, maxChunkSize]);
+    localStorage.setItem("translationEnabled", translationEnabled.toString());
+  }, [sourceLang, targetLang, voiceLang, translationProvider, maxChunkSize, translationEnabled]);
 
 
   const toggleTheme = () => {
@@ -104,8 +111,6 @@ export default function Home() {
     availableVoices,
     selectedVoice,
     speechRate,
-    currentChunk,
-    totalChunks,
     progress,
     isTranslatingChunk,
     isSupported,
@@ -126,15 +131,6 @@ export default function Home() {
       });
     }
   }, [isSupported]);
-
-  // Show toast when translation error changes
-  useEffect(() => {
-    if (translationError) {
-      toast.error("Translation Failed", {
-        description: translationError,
-      });
-    }
-  }, [translationError]);
 
   // Get all unique voice languages from browser
   const voiceLanguages = useMemo(() => {
@@ -187,18 +183,17 @@ export default function Home() {
     setMaxChunkSize(parseInt(e.target.value, 10));
   };
 
-  // Perform full translation (static endpoint test)
+  // Perform full translation for the transcript view
   const handleTranslate = async () => {
     if (!sourceText.trim()) return;
 
     if (sourceText.length > 5000) {
-      setTranslationError("Full document static translation is limited to 5,000 characters. For larger documents, please use the 'Translate & Speak Pipeline' below, which translates progressively chunk-by-chunk.");
+      toast.error("Static transcript translation is limited to 5,000 characters. The audio translation will still work for the full document.");
       return;
     }
 
     setIsTranslating(true);
-    setTranslationError(null);
-    const toastId = toast.loading("Translating text...");
+    const toastId = toast.loading("Generating translation transcript...");
 
     try {
       const provider = translationProvider;
@@ -222,7 +217,7 @@ export default function Home() {
             });
             const result = await translator.translate(sourceText);
             setTranslatedText(result);
-            toast.success("Translation complete", { id: toastId });
+            toast.success("Transcript generated", { id: toastId });
           } else {
             throw new Error("Local browser translation pair not supported.");
           }
@@ -234,7 +229,7 @@ export default function Home() {
             const data = await res.json() as [[[string, string]]];
             const result = data[0].map((x) => x[0]).join("");
             setTranslatedText(result);
-            toast.success("Translation complete", { id: toastId });
+            toast.success("Transcript generated", { id: toastId });
           } else {
             throw new Error("Fallback Google Scraping Translation failed.");
           }
@@ -259,29 +254,45 @@ export default function Home() {
         }
 
         setTranslatedText(data.translatedText);
-        toast.success("Translation complete", { id: toastId });
+        toast.success("Transcript generated", { id: toastId });
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Translation service is currently unavailable.";
-      setTranslationError(message);
-      toast.error("Translation Failed", { id: toastId, description: message });
+      toast.error("Transcript Failed", { id: toastId, description: message });
     } finally {
       setIsTranslating(false);
     }
   };
 
-  // Progressive Speak Pipeline Trigger with size limits validation
-  const handleSpeakPipeline = () => {
+  // Auto-translate if transcript is shown and text changes (debounced could be added later)
+  useEffect(() => {
+    if (translationEnabled && showTranscript && sourceText && !isTranslating) {
+      if (translatedText === "") {
+        const timeoutId = setTimeout(() => {
+          handleTranslate();
+        }, 0);
+        return () => clearTimeout(timeoutId);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translationEnabled, showTranscript]);
+
+  // Main playback trigger
+  const handlePlay = () => {
     if (!sourceText.trim()) return;
 
     if (sourceText.length > 50000) {
-      setTranslationError("The progressive translation pipeline is limited to 50,000 characters to ensure browser tab stability. Please shorten your document.");
+      toast.error("The document is limited to 50,000 characters to ensure browser tab stability. Please shorten your document.");
       return;
     }
 
-    setTranslationError(null);
-    toast.success("Pipeline started", { description: "Translating and speaking sequentially..." });
-    speak(sourceText, maxChunkSize, sourceLang, targetLang, translationProvider);
+    if (translationEnabled) {
+      toast.success("Translating & Speaking...", { description: "Processing audio sequentially in the background." });
+      speak(sourceText, maxChunkSize, sourceLang, targetLang, translationProvider);
+    } else {
+      toast.success("Speaking...", { description: "Processing audio sequentially." });
+      speak(sourceText, maxChunkSize);
+    }
   };
 
   // Clear all states, inputs, and stop active speech playback
@@ -289,8 +300,7 @@ export default function Home() {
     stop();
     setSourceText("");
     setTranslatedText("");
-    setTranslationError(null);
-    toast.info("Workspace cleared");
+    toast.info("Document cleared");
   };
 
   return (
@@ -326,52 +336,25 @@ export default function Home() {
       />
 
       {/* Main Workspace */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 relative z-10">
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 relative z-10 pb-40">
         
-        {/* Main Grid: Input Source (Left) & Output Target (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
-          <SourcePanel
-            sourceText={sourceText}
-            setSourceText={setSourceText}
-            sourceLang={sourceLang}
-            setSourceLang={setSourceLang}
-            isPlaying={isPlaying}
-            isTranslating={isTranslating}
-            handleClear={handleClear}
-            handleTranslate={handleTranslate}
-          />
-
-          <OutputPanel
-            translatedText={translatedText}
-            setTranslatedText={setTranslatedText}
-            targetLang={targetLang}
-            setTargetLang={setTargetLang}
-            setVoiceLang={setVoiceLang}
-            isPlaying={isPlaying}
-            isTranslating={isTranslating}
-          />
-        </div>
-
-        <PlaybackControls
-          isPlaying={isPlaying}
-          isPaused={isPaused}
-          progress={progress}
-          isTranslatingChunk={isTranslatingChunk}
-          currentChunk={currentChunk}
-          totalChunks={totalChunks}
+        <DocumentReader
           sourceText={sourceText}
+          setSourceText={(text) => {
+            setSourceText(text);
+            if (translatedText) setTranslatedText(""); // Reset transcript if source changes
+          }}
           translatedText={translatedText}
+          isPlaying={isPlaying}
           isTranslating={isTranslating}
-          maxChunkSize={maxChunkSize}
-          handleSpeakPipeline={handleSpeakPipeline}
-          speak={speak}
-          pause={pause}
-          resume={resume}
-          stop={stop}
+          handleClear={handleClear}
+          showTranscript={showTranscript}
+          setShowTranscript={setShowTranscript}
+          translationEnabled={translationEnabled}
         />
 
         {/* PWA / Browser limits diagnostic section */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-5 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-5 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow duration-300 max-w-4xl mx-auto w-full">
           <details className="group">
             <summary className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] cursor-pointer select-none flex items-center justify-between p-1 rounded-lg hover:bg-[var(--bg-input)] transition-colors">
               <span className="flex items-center gap-2">
@@ -384,32 +367,49 @@ export default function Home() {
             </summary>
             <div className="mt-4 text-sm text-[var(--text-secondary)] space-y-4 leading-relaxed border-t border-[var(--border-input)] pt-4">
               <p>
-                <strong className="text-[var(--text-primary)]">Text-to-Speech (TTS) Engine:</strong> Browser-native audio synthesis runs locally via the Web Speech API (<code className="bg-[var(--bg-input)] px-1 rounded">window.speechSynthesis</code>). Behavior and features vary by browser and platform:
+                <strong className="text-[var(--text-primary)]">Text-to-Speech (TTS) Engine:</strong> Browser-native audio synthesis runs locally via the Web Speech API. Behavior and features vary by browser and platform:
               </p>
               <ul className="pl-5 space-y-2 list-disc marker:text-indigo-500">
                 <li>
-                  <strong className="text-[var(--text-primary)]">iOS Safari / Chrome:</strong> Apple restricts automatic audio playback. You must manually trigger speech with a user gesture (tapping the &quot;Speak&quot; buttons). Background playback may stall when the screen locks.
+                  <strong className="text-[var(--text-primary)]">iOS Safari / Chrome:</strong> Apple restricts automatic audio playback. Background playback may stall when the screen locks.
                 </li>
                 <li>
-                  <strong className="text-[var(--text-primary)]">Voice Options:</strong> Voices are device-specific. Premium voice models depend on your OS, and Safari/Chrome will load different voice profiles.
+                  <strong className="text-[var(--text-primary)]">Voice Options:</strong> Voices are device-specific. Premium voice models depend on your OS.
                 </li>
                 <li>
-                  <strong className="text-[var(--text-primary)]">Keyless Translation Mode:</strong> Setting <code className="bg-[var(--bg-input)] px-1 rounded font-mono text-xs">NEXT_PUBLIC_TRANSLATION_PROVIDER=browser</code> enables 100% free translation utilizing your browser&apos;s native <code className="bg-[var(--bg-input)] px-1 rounded font-mono text-xs">window.translation</code> API.
-                </li>
-                <li>
-                  <strong className="text-[var(--text-primary)]">Static vs Pipeline limits:</strong> Full static translation handles text up to 5,000 characters. For larger documents up to 50,000 characters, use the &quot;Translate & Speak Pipeline&quot;.
+                  <strong className="text-[var(--text-primary)]">Keyless Translation Mode:</strong> Translation utilizes your browser&apos;s native API or falls back to a free provider.
                 </li>
               </ul>
             </div>
           </details>
         </div>
-
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-[var(--border-bottom)] bg-[var(--bg-header)]/80 backdrop-blur-md py-6 text-center text-xs text-[var(--text-muted)] transition-colors mt-auto relative z-10">
-        <p>© {new Date().getFullYear()} Textora. Local Audio Synthesis & Secured Server Translation. All rights reserved.</p>
-      </footer>
+      <BottomPlayer
+        isPlaying={isPlaying}
+        isPaused={isPaused}
+        progress={progress}
+        sourceText={sourceText}
+        isTranslating={isTranslating}
+        isTranslatingChunk={isTranslatingChunk}
+        translationEnabled={translationEnabled}
+        setTranslationEnabled={setTranslationEnabled}
+        targetLang={targetLang}
+        setTargetLang={setTargetLang}
+        setVoiceLang={setVoiceLang}
+        voiceLang={voiceLang}
+        voiceLanguages={voiceLanguages}
+        filteredVoices={filteredVoices}
+        selectedVoice={selectedVoice}
+        handleVoiceChange={handleVoiceChange}
+        speechRate={speechRate}
+        handleRateChange={handleRateChange}
+        handlePlay={handlePlay}
+        pause={pause}
+        resume={resume}
+        stop={stop}
+      />
+
     </main>
   );
 }
