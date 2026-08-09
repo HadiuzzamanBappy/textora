@@ -17,6 +17,9 @@ export default function Home() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationError, setTranslationError] = useState<string | null>(null);
   const [maxChunkSize, setMaxChunkSize] = useState(200);
+  const [translationProvider, setTranslationProvider] = useState<"mock" | "browser" | "google">(
+    (process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER as "mock" | "browser" | "google") || "browser"
+  );
 
   // Theme state setup
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -89,7 +92,7 @@ export default function Home() {
     setTranslationError(null);
 
     try {
-      const provider = process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER || "mock";
+      const provider = translationProvider;
 
       if (provider === "browser") {
         const translationApi =
@@ -163,7 +166,7 @@ export default function Home() {
     }
 
     setTranslationError(null);
-    speak(sourceText, maxChunkSize, sourceLang, targetLang);
+    speak(sourceText, maxChunkSize, sourceLang, targetLang, translationProvider);
   };
 
   // Clear all states, inputs, and stop active speech playback
@@ -244,18 +247,6 @@ export default function Home() {
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                 Source Document
               </span>
-              <select
-                aria-label="Source Language Selector"
-                value={sourceLang}
-                onChange={(e) => setSourceLang(e.target.value)}
-                disabled={isPlaying || isTranslating}
-                className="bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-secondary)] text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
-              >
-                <option value="en">English (US)</option>
-                <option value="es">Spanish (ES)</option>
-                <option value="fr">French (FR)</option>
-                <option value="de">German (DE)</option>
-              </select>
             </div>
 
             <textarea
@@ -305,24 +296,11 @@ export default function Home() {
           </div>
 
           {/* Target / Audio Panel Column */}
-          {/* Target / Audio Panel Column */}
           <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-5 backdrop-blur-sm flex flex-col gap-4 shadow-xl">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                 Translation Output
               </span>
-              <select
-                aria-label="Target Language Selector"
-                value={targetLang}
-                onChange={(e) => setTargetLang(e.target.value)}
-                disabled={isPlaying || isTranslating}
-                className="bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-secondary)] text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
-              >
-                <option value="es">Spanish (ES)</option>
-                <option value="en">English (US)</option>
-                <option value="fr">French (FR)</option>
-                <option value="de">German (DE)</option>
-              </select>
             </div>
 
             <textarea
@@ -341,88 +319,167 @@ export default function Home() {
 
         </div>
 
-        {/* Global Pipeline control console */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-6">
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Control 1: Select Voice */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="voice-select" className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
-                Speaker Voice
-              </label>
-              {availableVoices.length === 0 ? (
-                <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-3 py-2">
-                  No system voices available.
+        {/* Settings Console split into Translation & Speech Settings */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Card A: Translation Settings */}
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-4 flex flex-col justify-between">
+            <div>
+              <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase mb-4">
+                Translation Settings
+              </h3>
+              <div className="space-y-4">
+                {/* Provider Select */}
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="provider-select" className="text-xs font-bold text-[var(--text-secondary)]">
+                    Translation Provider
+                  </label>
+                  <select
+                    id="provider-select"
+                    value={translationProvider}
+                    onChange={(e) => setTranslationProvider(e.target.value as "browser" | "google")}
+                    disabled={isPlaying || isTranslating}
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
+                  >
+                    <option value="browser">Free Web Translator (Keyless/Client)</option>
+                    <option value="google">Google Cloud API (Requires Key)</option>
+                  </select>
                 </div>
-              ) : (
-                <select
-                  id="voice-select"
-                  value={selectedVoice?.name || ""}
-                  onChange={handleVoiceChange}
-                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
-                >
-                  {availableVoices.map((voice) => (
-                    <option key={voice.name} value={voice.name}>
-                      {voice.name} ({voice.lang})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
 
-            {/* Control 2: Speech Speed */}
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <label htmlFor="speech-rate" className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase font-sans">
-                  Voice Speed
-                </label>
-                <span className="text-xs font-bold text-indigo-400 font-mono">{speechRate.toFixed(1)}x</span>
-              </div>
-              <input
-                id="speech-rate"
-                type="range"
-                min="0.5"
-                max="2.0"
-                step="0.1"
-                value={speechRate}
-                onChange={handleRateChange}
-                className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500"
-              />
-              <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
-                <span>0.5x</span>
-                <span>1.0x (Normal)</span>
-                <span>2.0x</span>
-              </div>
-            </div>
+                {/* Source and Target Languages */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="source-lang-select" className="text-xs font-bold text-[var(--text-secondary)]">
+                      Source Language
+                    </label>
+                    <select
+                      id="source-lang-select"
+                      value={sourceLang}
+                      onChange={(e) => setSourceLang(e.target.value)}
+                      disabled={isPlaying || isTranslating}
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
+                    >
+                      <option value="en">English (US)</option>
+                      <option value="es">Spanish (ES)</option>
+                      <option value="fr">French (FR)</option>
+                      <option value="de">German (DE)</option>
+                    </select>
+                  </div>
 
-            {/* Control 3: Max Chunk Size */}
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <label htmlFor="chunk-size" className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
-                  Text Segmentation Limit
-                </label>
-                <span className="text-xs font-bold text-indigo-400 font-mono">{maxChunkSize} chars</span>
-              </div>
-              <input
-                id="chunk-size"
-                type="range"
-                min="50"
-                max="500"
-                step="25"
-                value={maxChunkSize}
-                onChange={handleChunkSizeChange}
-                className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500"
-              />
-              <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
-                <span>50 chars</span>
-                <span>200 chars (Default)</span>
-                <span>500 chars</span>
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor="target-lang-select" className="text-xs font-bold text-[var(--text-secondary)]">
+                      Target Language
+                    </label>
+                    <select
+                      id="target-lang-select"
+                      value={targetLang}
+                      onChange={(e) => setTargetLang(e.target.value)}
+                      disabled={isPlaying || isTranslating}
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
+                    >
+                      <option value="es">Spanish (ES)</option>
+                      <option value="en">English (US)</option>
+                      <option value="fr">French (FR)</option>
+                      <option value="de">German (DE)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
-
+            {translationProvider === "google" && !process.env.NEXT_PUBLIC_GOOGLE_TRANSLATE_API_KEY && (
+              <div className="text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5">
+                <strong>Notice:</strong> Google Cloud API provider requires setting `GOOGLE_TRANSLATE_API_KEY` in environment variables.
+              </div>
+            )}
           </div>
 
+          {/* Card B: Speech Settings (TTS) */}
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-6">
+            <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
+              Speech Synthesis (TTS)
+            </h3>
+            
+            <div className="space-y-4">
+              {/* Speaker Voice */}
+              <div className="flex flex-col gap-2">
+                <label htmlFor="voice-select" className="text-xs font-bold text-[var(--text-secondary)]">
+                  Speaker Voice
+                </label>
+                {availableVoices.length === 0 ? (
+                  <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-3 py-2">
+                    No system voices available.
+                  </div>
+                ) : (
+                  <select
+                    id="voice-select"
+                    value={selectedVoice?.name || ""}
+                    onChange={handleVoiceChange}
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
+                  >
+                    {availableVoices.map((voice) => (
+                      <option key={voice.name} value={voice.name}>
+                        {voice.name} ({voice.lang})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Speech Speed and Segmentation */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <label htmlFor="speech-rate" className="text-xs font-bold text-[var(--text-secondary)] font-sans">
+                      Voice Speed
+                    </label>
+                    <span className="text-xs font-bold text-indigo-400 font-mono">{speechRate.toFixed(1)}x</span>
+                  </div>
+                  <input
+                    id="speech-rate"
+                    type="range"
+                    min="0.5"
+                    max="2.0"
+                    step="0.1"
+                    value={speechRate}
+                    onChange={handleRateChange}
+                    className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
+                    <span>0.5x</span>
+                    <span>2.0x</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <label htmlFor="chunk-size" className="text-xs font-bold text-[var(--text-secondary)]">
+                      Text Segmentation
+                    </label>
+                    <span className="text-xs font-bold text-indigo-400 font-mono">{maxChunkSize} chars</span>
+                  </div>
+                  <input
+                    id="chunk-size"
+                    type="range"
+                    min="50"
+                    max="500"
+                    step="25"
+                    value={maxChunkSize}
+                    onChange={handleChunkSizeChange}
+                    className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
+                    <span>50 ch</span>
+                    <span>500 ch</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Global Pipeline controls and visualizer */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-4">
           {/* Active play status and progress bar */}
           {(isPlaying || progress > 0 || isTranslatingChunk) && (
             <div className="bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl p-4 space-y-3">

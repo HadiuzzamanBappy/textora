@@ -34,7 +34,7 @@ export function useSpeechSynthesis() {
   const sessionRef = useRef<number>(0);
   const chunksRef = useRef<string[]>([]);
   const currentIndexRef = useRef<number>(0);
-  const playChunkRef = useRef<(index: number, session: number, sourceLang?: string, targetLang?: string) => void>(() => {});
+  const playChunkRef = useRef<(index: number, session: number, sourceLang?: string, targetLang?: string, provider?: string) => void>(() => {});
 
   // Helper to safely fetch window.speechSynthesis
   const getSynth = useCallback(() => {
@@ -146,7 +146,7 @@ export function useSpeechSynthesis() {
 
   // Plays a single chunk from chunksRef.current at specified index
   const playChunk = useCallback(
-    async (index: number, session: number, sourceLang?: string, targetLang?: string) => {
+    async (index: number, session: number, sourceLang?: string, targetLang?: string, provider?: string) => {
       const synth = getSynth();
       if (!synth) return;
 
@@ -258,7 +258,7 @@ export function useSpeechSynthesis() {
       utterance.onend = () => {
         if (session !== sessionRef.current) return;
         currentIndexRef.current = index + 1;
-        playChunkRef.current(currentIndexRef.current, session, sourceLang, targetLang);
+        playChunkRef.current(currentIndexRef.current, session, sourceLang, targetLang, provider);
       };
 
       utterance.onerror = (event) => {
@@ -271,7 +271,7 @@ export function useSpeechSynthesis() {
 
         // Gracefully recover: move to next chunk
         currentIndexRef.current = index + 1;
-        playChunkRef.current(currentIndexRef.current, session, sourceLang, targetLang);
+        playChunkRef.current(currentIndexRef.current, session, sourceLang, targetLang, provider);
       };
 
       utterance.onpause = () => {
@@ -295,7 +295,7 @@ export function useSpeechSynthesis() {
   }, [playChunk]);
 
   const speak = useCallback(
-    (text: string, maxChunkSize: number = 200, sourceLang?: string, targetLang?: string) => {
+    (text: string, maxChunkSize: number = 200, sourceLang?: string, targetLang?: string, provider?: string) => {
       const synth = getSynth();
       if (!synth || !text.trim()) return;
 
@@ -316,7 +316,7 @@ export function useSpeechSynthesis() {
       }
 
       // Begin playing first chunk in queue
-      playChunk(0, currentSession, sourceLang, targetLang);
+      playChunk(0, currentSession, sourceLang, targetLang, provider);
     },
     [getSynth, playChunk, stop]
   );
