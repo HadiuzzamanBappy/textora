@@ -37,7 +37,15 @@ export function useSpeechSynthesis() {
   const chunksRef = useRef<string[]>([]);
   const currentIndexRef = useRef<number>(0);
   const keepAliveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const fallbackTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isAndroidRef = useRef<boolean>(false);
   const iosUnlockedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (typeof navigator !== "undefined") {
+      isAndroidRef.current = /Android/i.test(navigator.userAgent);
+    }
+  }, []);
   const playChunkRef = useRef<(index: number, session: number, sourceLang?: string, targetLang?: string, provider?: string) => void>(() => {});
 
   // Helper to safely fetch window.speechSynthesis
@@ -116,6 +124,7 @@ export function useSpeechSynthesis() {
     sessionRef.current++; // Invalidate active async callbacks
     
     if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
+    if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
     if (synth) {
       synth.cancel();
     }
@@ -261,22 +270,59 @@ export function useSpeechSynthesis() {
       utteranceRef.current = utterance;
 
       // Chrome 14s bug workaround: pause and resume every 10s to keep it alive
+      // Do NOT do this on Android, as pause/resume breaks Google TTS completely.
       if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
-      keepAliveTimerRef.current = setInterval(() => {
-        if (synth && synth.speaking) {
-          synth.pause();
-          synth.resume();
-        }
-      }, 10000);
+      if (!isAndroidRef.current) {
+        keepAliveTimerRef.current = setInterval(() => {
+          if (synth && synth.speaking) {
+            synth.pause();
+            synth.resume();
+          }
+        }, 10000);
+      }
 
       if (state.selectedVoice) {
         utterance.voice = state.selectedVoice;
       }
       utterance.rate = state.speechRate;
 
+      // Fallback state for Android tracking bug where onboundary never fires
+      let hasReceivedBoundary = false;
+      const expectedDurationMs = (textToSpeak.length / 15) * 1000 / state.speechRate;
+      const startTime = Date.now();
+      let totalPausedTime = 0;
+      let lastPauseTime = 0;
+
+      utterance.onstart = () => {
+        if (session !== sessionRef.current) return;
+        setState((prev) => ({ ...prev, isPlaying: true, isPaused: false, currentCharIndex: 0 }));
+
+        if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
+        if (isAndroidRef.current) {
+          fallbackTimerRef.current = setInterval(() => {
+            if (hasReceivedBoundary || synth.paused) return;
+            const elapsed = Date.now() - startTime - totalPausedTime;
+            let estimatedRatio = elapsed / expectedDurationMs;
+            if (estimatedRatio > 0.99) estimatedRatio = 0.99;
+            
+            const estimatedCharIndex = Math.floor(estimatedRatio * textToSpeak.length);
+            const chunkProgress = estimatedCharIndex / Math.max(1, textToSpeak.length);
+            const totalChunks = chunksRef.current.length;
+            const overallProgress = Math.round(((index + chunkProgress) / totalChunks) * 100);
+
+            setState((prev) => ({
+              ...prev,
+              currentCharIndex: estimatedCharIndex,
+              progress: overallProgress
+            }));
+          }, 200);
+        }
+      };
+
       utterance.onend = () => {
         if (session !== sessionRef.current) return;
         if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
+        if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
         currentIndexRef.current = index + 1;
         playChunkRef.current(currentIndexRef.current, session, sourceLang, targetLang, provider);
       };
@@ -284,6 +330,7 @@ export function useSpeechSynthesis() {
       utterance.onerror = (event) => {
         if (session !== sessionRef.current) return;
         if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
+        if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
         
         // Log non-user cancelled errors
         if (event.error !== "interrupted") {
@@ -298,16 +345,23 @@ export function useSpeechSynthesis() {
       utterance.onpause = () => {
         if (session !== sessionRef.current) return;
         setState((prev) => ({ ...prev, isPaused: true }));
+        lastPauseTime = Date.now();
       };
 
       utterance.onresume = () => {
         if (session !== sessionRef.current) return;
         setState((prev) => ({ ...prev, isPlaying: true, isPaused: false }));
+        if (lastPauseTime) {
+          totalPausedTime += Date.now() - lastPauseTime;
+          lastPauseTime = 0;
+        }
       };
 
       utterance.onboundary = (event) => {
         if (session !== sessionRef.current) return;
         if (event.name === "word" || event.name === "sentence") {
+          hasReceivedBoundary = true;
+          if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
           const chunkProgress = event.charIndex / Math.max(1, textToSpeak.length);
           const totalChunks = chunksRef.current.length;
           const overallProgress = Math.round(((index + chunkProgress) / totalChunks) * 100);
