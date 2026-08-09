@@ -13,6 +13,7 @@ export interface SpeechSynthesisState {
   totalChunks: number;
   progress: number; // 0 to 100
   isTranslatingChunk: boolean; // True when fetch is in flight
+  isSupported: boolean; // True if browser supports SpeechSynthesis
 }
 
 export function useSpeechSynthesis() {
@@ -26,6 +27,7 @@ export function useSpeechSynthesis() {
     totalChunks: 0,
     progress: 0,
     isTranslatingChunk: false,
+    isSupported: true, // Default to true until checked in client mount
   });
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -71,12 +73,17 @@ export function useSpeechSynthesis() {
 
   useEffect(() => {
     const synth = getSynth();
-    if (!synth) return;
+    const supported = synth !== null;
 
     // Load voices on next tick to avoid calling setState synchronously during rendering/effect phase
     const timeoutId = setTimeout(() => {
-      loadVoices();
+      setState((prev) => ({ ...prev, isSupported: supported }));
+      if (supported) {
+        loadVoices();
+      }
     }, 0);
+
+    if (!synth) return;
 
     const handleVoicesChanged = () => {
       loadVoices();

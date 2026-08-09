@@ -24,12 +24,14 @@ export async function POST(request: Request) {
       errors.push("Text size exceeds the maximum limit of 5000 characters.");
     }
 
-    if (typeof sourceLanguage !== "string" || sourceLanguage.trim().length < 2) {
-      errors.push("Source language must be a valid language code.");
+    const supportedLanguages = ["en", "es", "fr", "de"];
+
+    if (typeof sourceLanguage !== "string" || !supportedLanguages.includes(sourceLanguage)) {
+      errors.push(`Source language is invalid or unsupported. Must be one of: ${supportedLanguages.join(", ")}`);
     }
 
-    if (typeof targetLanguage !== "string" || targetLanguage.trim().length < 2) {
-      errors.push("Target language must be a valid language code.");
+    if (typeof targetLanguage !== "string" || !supportedLanguages.includes(targetLanguage)) {
+      errors.push(`Target language is invalid or unsupported. Must be one of: ${supportedLanguages.join(", ")}`);
     }
 
     if (errors.length > 0) {
