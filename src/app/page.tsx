@@ -439,10 +439,10 @@ export default function Home() {
               Speech Synthesis (TTS)
             </h3>
             
-            <div className="space-y-4">
-              {/* Divided Speech options: Voice Language & Voice Speaker */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Voice Language (Dependent Trigger) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column: Dropdowns */}
+              <div className="space-y-4">
+                {/* Voice Language Select */}
                 <div className="flex flex-col gap-2">
                   <label htmlFor="voice-lang-select" className="text-xs font-bold text-[var(--text-secondary)]">
                     Voice Language
@@ -461,7 +461,7 @@ export default function Home() {
                   </select>
                 </div>
 
-                {/* Voice Speaker (Filtered dynamically based on chosen Language) */}
+                {/* Voice Speaker Select */}
                 <div className="flex flex-col gap-2">
                   <label htmlFor="voice-select" className="text-xs font-bold text-[var(--text-secondary)]">
                     Voice Speaker
@@ -491,8 +491,9 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Speech Speed and Segmentation */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Right Column: Sliders (each in its own row) */}
+              <div className="space-y-4">
+                {/* Row 1: Voice Speed */}
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center">
                     <label htmlFor="speech-rate" className="text-xs font-bold text-[var(--text-secondary)] font-sans">
@@ -516,6 +517,7 @@ export default function Home() {
                   </div>
                 </div>
 
+                {/* Row 2: Text Segmentation */}
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center">
                     <label htmlFor="chunk-size" className="text-xs font-bold text-[var(--text-secondary)]">
