@@ -1,5 +1,5 @@
 import React from "react";
-import { Play, Pause, Square, Volume2, Globe, Settings2 } from "lucide-react";
+import { Play, Pause, Square, Volume2, Globe, Download, Loader2, ChevronUp } from "lucide-react";
 import { cn } from "../utils/cn";
 import { SUPPORTED_LANGUAGES } from "../utils/languages";
 
@@ -15,6 +15,7 @@ interface BottomPlayerProps {
   sourceText: string;
   isTranslating: boolean;
   isTranslatingChunk: boolean;
+  isExporting: boolean;
   translationEnabled: boolean;
   setTranslationEnabled: (enabled: boolean) => void;
   targetLang: string;
@@ -31,6 +32,7 @@ interface BottomPlayerProps {
   pause: () => void;
   resume: () => void;
   stop: () => void;
+  handleExport: (format: 'mp3' | 'wav') => void;
 }
 
 export function BottomPlayer({
@@ -40,6 +42,7 @@ export function BottomPlayer({
   sourceText,
   isTranslating,
   isTranslatingChunk,
+  isExporting,
   translationEnabled,
   setTranslationEnabled,
   targetLang,
@@ -55,6 +58,7 @@ export function BottomPlayer({
   pause,
   resume,
   stop,
+  handleExport,
 }: BottomPlayerProps) {
 
   // Filter supported languages to only show ones that the user's browser has a voice for
@@ -75,7 +79,7 @@ export function BottomPlayer({
             <div
               className={cn(
                 "h-full transition-all duration-300 ease-out",
-                progress === 100 ? "bg-emerald-500" : "bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 bg-[length:200%_100%] animate-[gradient_2s_linear_infinite]"
+                progress === 100 ? "bg-rose-500" : "bg-gradient-to-r from-rose-500 via-orange-500 to-rose-500 bg-[length:200%_100%] animate-[gradient_2s_linear_infinite]"
               )}
               style={{ width: `${progress}%` }}
             />
@@ -100,7 +104,7 @@ export function BottomPlayer({
                 />
                 <div className={cn(
                   "block w-10 h-6 rounded-full transition-colors duration-300",
-                  translationEnabled ? "bg-indigo-500" : "bg-[var(--bg-input)] border border-[var(--border-input)]"
+                  translationEnabled ? "bg-rose-500" : "bg-[var(--bg-input)] border border-[var(--border-input)]"
                 )}></div>
                 <div className={cn(
                   "dot absolute left-1 top-1 w-4 h-4 rounded-full transition-all duration-300 shadow-sm",
@@ -109,31 +113,44 @@ export function BottomPlayer({
               </div>
               <span className={cn(
                 "text-xs font-bold uppercase tracking-wider transition-colors",
-                translationEnabled ? "text-indigo-400" : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
+                translationEnabled ? "text-rose-400" : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
               )}>
                 Translate
               </span>
             </label>
 
             {translationEnabled && (
-              <div className="relative flex-1 animate-in slide-in-from-left-4 fade-in duration-300 max-w-[150px]">
-                <select
-                  value={targetLang}
-                  onChange={(e) => {
-                    setTargetLang(e.target.value);
-                    setVoiceLang(e.target.value);
-                  }}
+              <div className="relative group/lang flex-1 animate-in slide-in-from-left-4 fade-in duration-300 max-w-[180px] flex items-center">
+                <button
                   disabled={isPlaying || isTranslating}
-                  className="w-full appearance-none bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs font-medium rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
+                  className="flex items-center justify-between w-full gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-primary)] hover:border-rose-500/40 transition-all text-xs font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {playableLanguages.map((lang) => (
-                    <option key={`target-${lang.code}`} value={lang.code}>
-                      {lang.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-[var(--text-secondary)]">
-                  <Globe className="w-3.5 h-3.5" />
+                  <span className="truncate">{playableLanguages.find(l => l.code === targetLang)?.name || targetLang}</span>
+                  <Globe className="w-3.5 h-3.5 opacity-80 shrink-0" />
+                </button>
+
+                {/* Flyout menu */}
+                <div className="absolute bottom-full left-0 pb-2 opacity-0 translate-y-2 pointer-events-none group-hover/lang:opacity-100 group-hover/lang:translate-y-0 group-hover/lang:pointer-events-auto transition-all duration-200 z-50 w-48">
+                  <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-y-auto max-h-60 flex flex-col custom-scrollbar scroll-smooth">
+                    {playableLanguages.map((lang) => (
+                      <button
+                        key={`target-${lang.code}`}
+                        onClick={() => {
+                          setTargetLang(lang.code);
+                          setVoiceLang(lang.code);
+                        }}
+                        className={cn(
+                          "flex items-center w-full px-4 py-2.5 text-xs font-medium text-left transition-colors",
+                          targetLang === lang.code
+                            ? "bg-rose-500 text-white hover:bg-rose-600"
+                            : "text-[var(--text-primary)] hover:bg-[var(--bg-input)]"
+                        )}
+                        title={lang.name}
+                      >
+                        <span className="truncate w-full">{lang.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -145,7 +162,7 @@ export function BottomPlayer({
               <button
                 onClick={handlePlay}
                 disabled={!sourceText.trim() || isTranslating}
-                className="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] disabled:opacity-40 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
+                className="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-rose-500 to-orange-600 hover:from-rose-400 hover:to-orange-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] disabled:opacity-40 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95"
               >
                 <Play className="w-6 h-6 ml-1" fill="currentColor" />
               </button>
@@ -168,7 +185,7 @@ export function BottomPlayer({
                 ) : (
                   <button
                     onClick={resume}
-                    className="flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500 hover:bg-emerald-400 text-emerald-950 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all transform hover:scale-105 active:scale-95"
+                    className="flex items-center justify-center w-14 h-14 rounded-full bg-rose-500 hover:bg-rose-400 text-rose-950 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all transform hover:scale-105 active:scale-95"
                   >
                     <Play className="w-6 h-6 ml-1" fill="currentColor" />
                   </button>
@@ -178,9 +195,9 @@ export function BottomPlayer({
                 <div className="w-10 h-6 flex items-center gap-0.5 justify-center ml-2">
                   {(isPlaying && !isPaused) ? (
                     <>
-                      <span className="w-1 h-3 bg-indigo-400 rounded-full animate-[bounce_0.6s_infinite_100ms]" />
-                      <span className="w-1 h-6 bg-purple-400 rounded-full animate-[bounce_0.6s_infinite_200ms]" />
-                      <span className="w-1 h-4 bg-indigo-400 rounded-full animate-[bounce_0.6s_infinite_150ms]" />
+                      <span className="w-1 h-3 bg-rose-400 rounded-full animate-[bounce_0.6s_infinite_100ms]" />
+                      <span className="w-1 h-6 bg-orange-400 rounded-full animate-[bounce_0.6s_infinite_200ms]" />
+                      <span className="w-1 h-4 bg-rose-400 rounded-full animate-[bounce_0.6s_infinite_150ms]" />
                     </>
                   ) : (
                     <>
@@ -194,43 +211,89 @@ export function BottomPlayer({
             )}
           </div>
 
-          {/* Right: Voice Settings */}
+          {/* Right: Voice Settings & Export */}
           <div className="flex items-center justify-center md:justify-end gap-3 w-full md:w-1/3">
 
             {/* Speed Control */}
             <div className="flex items-center gap-2 group/speed cursor-pointer relative">
-              <div className="p-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-secondary)] hover:text-indigo-400 transition-colors">
+              <div className="p-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-secondary)] hover:text-rose-400 transition-colors">
                 <Volume2 className="w-4 h-4" />
               </div>
               {/* Flyout slider */}
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-3 opacity-0 translate-y-2 pointer-events-none group-hover/speed:opacity-100 group-hover/speed:translate-y-0 group-hover/speed:pointer-events-auto transition-all duration-300 w-32 z-50">
                 <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl p-3 shadow-xl">
-                  <div className="text-center text-[10px] font-bold text-indigo-400 mb-2">{speechRate.toFixed(1)}x Speed</div>
-                  <input type="range" min="0.5" max="2.0" step="0.1" value={speechRate} onChange={handleRateChange} className="w-full h-1.5 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+                  <div className="text-center text-[10px] font-bold text-rose-400 mb-2">{speechRate.toFixed(1)}x Speed</div>
+                  <input type="range" min="0.5" max="2.0" step="0.1" value={speechRate} onChange={handleRateChange} className="w-full h-1.5 bg-rose-500/20 rounded-lg appearance-none cursor-pointer accent-rose-500" />
                 </div>
               </div>
             </div>
 
             {/* Voice Selection */}
-            <div className="relative flex-1 max-w-[200px]">
-              {filteredVoices.length === 0 ? (
-                <select disabled className="w-full appearance-none bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-muted)] text-xs font-medium rounded-lg pl-3 pr-8 py-2 opacity-50 cursor-not-allowed">
-                  <option>No voices found</option>
-                </select>
-              ) : (
-                <select
-                  value={selectedVoice?.name || ""}
-                  onChange={handleVoiceChange}
-                  className="w-full appearance-none bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs font-medium rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:border-indigo-500/80 cursor-pointer shadow-sm hover:border-indigo-500/40 transition-colors"
-                >
-                  {filteredVoices.map((voice) => (
-                    <option key={voice.name} value={voice.name}>{voice.name}</option>
-                  ))}
-                </select>
+            <div className="relative group/voice flex-1 max-w-[180px] flex items-center">
+              <button
+                disabled={filteredVoices.length === 0}
+                className="flex items-center justify-between w-full gap-1.5 px-3 py-2 rounded-lg border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-primary)] hover:border-rose-500/40 transition-all text-xs font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="truncate">{selectedVoice?.name || "No voices found"}</span>
+                <ChevronUp className="w-3.5 h-3.5 opacity-80 shrink-0" />
+              </button>
+
+              {/* Flyout menu */}
+              {filteredVoices.length > 0 && (
+                <div className="absolute bottom-full right-0 pb-2 opacity-0 translate-y-2 pointer-events-none group-hover/voice:opacity-100 group-hover/voice:translate-y-0 group-hover/voice:pointer-events-auto transition-all duration-200 z-50 w-64">
+                  <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-y-auto max-h-60 flex flex-col custom-scrollbar scroll-smooth">
+                    {filteredVoices.map((voice) => (
+                      <button
+                        key={voice.name}
+                        onClick={() => handleVoiceChange({ target: { value: voice.name } } as React.ChangeEvent<HTMLSelectElement>)}
+                        className={cn(
+                          "flex items-center w-full px-4 py-2.5 text-xs font-medium text-left transition-colors",
+                          selectedVoice?.name === voice.name
+                            ? "bg-rose-500 text-white hover:bg-rose-600"
+                            : "text-[var(--text-primary)] hover:bg-[var(--bg-input)]"
+                        )}
+                        title={voice.name}
+                      >
+                        <span className="truncate w-full">{voice.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-[var(--text-secondary)]">
-                <Settings2 className="w-3.5 h-3.5" />
-              </div>
+            </div>
+
+            {/* Export MP3/WAV Button */}
+            <div className="relative group/export flex items-center">
+              <button
+                onClick={() => handleExport('mp3')}
+                disabled={isPlaying || isTranslating || isExporting || !sourceText.trim()}
+                title="Export Audio"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--border-input)] bg-rose-500 text-white hover:bg-rose-600 transition-all text-xs font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isExporting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
+                <span className="hidden sm:inline">{isExporting ? "Exporting..." : "Export"}</span>
+                <ChevronUp className="w-3.5 h-3.5 ml-0.5 opacity-80" />
+              </button>
+
+              {/* Flyout menu */}
+              {(!!sourceText.trim() && !isPlaying && !isTranslating && !isExporting) && (
+                <div className="absolute bottom-full right-0 pb-2 opacity-0 translate-y-2 pointer-events-none group-hover/export:opacity-100 group-hover/export:translate-y-0 group-hover/export:pointer-events-auto transition-all duration-200 z-50">
+                  <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-hidden flex flex-col w-max">
+                    <button onClick={() => handleExport('mp3')} className="px-4 py-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-input)] text-left flex items-center gap-3 whitespace-nowrap">
+                      <span>.mp3 Format</span>
+                      <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-input)] px-1.5 py-0.5 rounded-md ml-auto">Fast</span>
+                    </button>
+                    <button onClick={() => handleExport('wav')} className="px-4 py-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-input)] text-left flex items-center gap-3 border-t border-[var(--border-input)] whitespace-nowrap">
+                      <span>.wav Format</span>
+                      <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-input)] px-1.5 py-0.5 rounded-md ml-auto">Lossless</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>

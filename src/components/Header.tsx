@@ -14,17 +14,17 @@ export function Header({ theme, toggleTheme, onOpenSettings }: HeaderProps) {
     <header className="border-b border-[var(--border-bottom)] bg-[var(--bg-header)] backdrop-blur-xl sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-4xl mx-auto px-4 md:px-0 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 relative group flex items-center justify-center">
+          <div className="w-10 h-10 relative group flex items-center justify-center -ml-1">
             <Image
               src="/logo.png"
               alt="Textora Logo"
               fill
-              sizes="36px"
-              className="object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-sm"
+              sizes="40px"
+              className="object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-md"
               priority
             />
           </div>
-          <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm">
+          <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-rose-500 to-orange-500 bg-clip-text text-transparent drop-shadow-sm">
             Textora
           </span>
         </div>
@@ -33,7 +33,7 @@ export function Header({ theme, toggleTheme, onOpenSettings }: HeaderProps) {
           <button
             onClick={onOpenSettings}
             aria-label="Open Settings"
-            className="p-2.5 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-indigo-400 hover:border-indigo-500/50 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all cursor-pointer group"
+            className="p-2.5 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-rose-400 hover:border-rose-500/50 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all cursor-pointer group"
           >
             <Settings className="w-4.5 h-4.5 transition-transform duration-500 group-hover:rotate-90" />
           </button>

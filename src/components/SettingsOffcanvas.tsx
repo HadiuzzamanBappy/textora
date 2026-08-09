@@ -60,8 +60,8 @@ export function SettingsOffcanvas({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--border-input)] shrink-0 bg-[var(--bg-header)]/50 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-              <Settings className="w-5 h-5 text-indigo-400" />
+            <div className="p-2 bg-rose-500/10 rounded-lg border border-rose-500/20">
+              <Settings className="w-5 h-5 text-rose-400" />
             </div>
             <h2 className="text-base font-bold tracking-wide text-[var(--text-primary)]">Advanced Settings</h2>
           </div>
@@ -76,9 +76,9 @@ export function SettingsOffcanvas({
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 scrollbar-thin scrollbar-thumb-[var(--border-input)] scrollbar-track-transparent">
-          
-          <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
-            <p className="text-xs text-indigo-300/80 leading-relaxed">
+
+          <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4">
+            <p className="text-xs text-rose-800 dark:text-rose-300/80 leading-relaxed font-medium dark:font-normal">
               These settings control the underlying engine. Voice selection and speed can now be found on the main player bar at the bottom of your screen.
             </p>
           </div>
@@ -86,25 +86,49 @@ export function SettingsOffcanvas({
           {/* Translation Section */}
           <section className="space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--border-input)]">
-              <Globe className="w-4 h-4 text-indigo-400" />
+              <Globe className="w-4 h-4 text-rose-400" />
               <span className="text-xs font-bold tracking-widest text-[var(--text-secondary)] uppercase">Translation Engine</span>
             </div>
 
             <div className="flex flex-col gap-2.5">
-              <label htmlFor="s-provider-select" className="text-sm font-medium text-[var(--text-primary)]">Translation Method</label>
-              <div className="relative">
-                <select
-                  id="s-provider-select"
-                  value={translationProvider}
-                  onChange={(e) => setTranslationProvider(e.target.value as "browser" | "google")}
+              <label className="text-sm font-medium text-[var(--text-primary)]">Translation Method</label>
+              <div className="relative group/provider flex items-center">
+                <button
                   disabled={isPlaying || isTranslating}
-                  className="w-full appearance-none bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 cursor-pointer disabled:opacity-50 transition-all shadow-sm"
+                  className="flex items-center justify-between w-full gap-2 px-4 py-3 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-primary)] hover:border-rose-500/40 transition-all text-sm font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="browser">Free Web Translator (Keyless)</option>
-                  <option value="google">Google Cloud API (Requires Key)</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-[var(--text-secondary)]">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  <span className="truncate">
+                    {translationProvider === "browser" ? "Web Translator (Keyless)" : "Google Cloud API (Requires Key)"}
+                  </span>
+                  <svg className="w-4 h-4 opacity-80 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+
+                {/* Flyout menu */}
+                <div className="absolute top-full right-0 pt-2 opacity-0 -translate-y-2 pointer-events-none group-hover/provider:opacity-100 group-hover/provider:translate-y-0 group-hover/provider:pointer-events-auto transition-all duration-200 z-50 w-full">
+                  <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-hidden flex flex-col">
+                    <button
+                      onClick={() => setTranslationProvider("browser")}
+                      className={cn(
+                        "flex items-center w-full px-4 py-3 text-sm font-medium text-left transition-colors",
+                        translationProvider === "browser"
+                          ? "bg-rose-500 text-white hover:bg-rose-600"
+                          : "text-[var(--text-primary)] hover:bg-[var(--bg-input)]"
+                      )}
+                    >
+                      <span className="truncate w-full">Web Translator (Keyless)</span>
+                    </button>
+                    <button
+                      onClick={() => setTranslationProvider("google")}
+                      className={cn(
+                        "flex items-center w-full px-4 py-3 text-sm font-medium text-left transition-colors border-t border-[var(--border-input)]",
+                        translationProvider === "google"
+                          ? "bg-rose-500 text-white hover:bg-rose-600"
+                          : "text-[var(--text-primary)] hover:bg-[var(--bg-input)]"
+                      )}
+                    >
+                      <span className="truncate w-full">Google Cloud API (Requires Key)</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -113,7 +137,7 @@ export function SettingsOffcanvas({
           {/* Engine Parameters Section */}
           <section className="space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--border-input)]">
-              <Mic className="w-4 h-4 text-indigo-400" />
+              <Mic className="w-4 h-4 text-rose-400" />
               <span className="text-xs font-bold tracking-widest text-[var(--text-secondary)] uppercase">Engine Parameters</span>
             </div>
 
@@ -124,9 +148,9 @@ export function SettingsOffcanvas({
                   <AlignLeft className="w-4 h-4 text-[var(--text-secondary)]" />
                   <label htmlFor="s-chunk-size" className="text-sm font-medium text-[var(--text-primary)]">Segmentation Size</label>
                 </div>
-                <span className="text-sm font-bold text-indigo-400 font-mono bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">{maxChunkSize}</span>
+                <span className="text-sm font-bold text-rose-400 font-mono bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">{maxChunkSize}</span>
               </div>
-              <input id="s-chunk-size" type="range" min="50" max="500" step="25" value={maxChunkSize} onChange={handleChunkSizeChange} className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400 transition-all" />
+              <input id="s-chunk-size" type="range" min="50" max="500" step="25" value={maxChunkSize} onChange={handleChunkSizeChange} className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-rose-500 hover:accent-rose-400 transition-all" />
               <div className="flex justify-between text-[11px] text-[var(--text-muted)] font-mono">
                 <span>50 ch</span><span>500 ch</span>
               </div>
@@ -139,7 +163,7 @@ export function SettingsOffcanvas({
         <div className="px-6 py-5 border-t border-[var(--border-input)] shrink-0 bg-[var(--bg-header)]/50 backdrop-blur-md">
           <button
             onClick={onClose}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-bold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-orange-600 hover:from-rose-600 hover:to-orange-700 text-white text-sm font-bold shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
           >
             <Check className="w-4.5 h-4.5" />
             Save Preferences

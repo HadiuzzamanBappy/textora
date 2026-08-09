@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
             <button
               onClick={() => window.location.reload()}
-              className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-medium transition-colors focus:ring-4 focus:ring-indigo-500/20"
+              className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-medium transition-colors focus:ring-4 focus:ring-rose-500/20"
             >
               <RefreshCw className="w-4 h-4" />
               Reload Application

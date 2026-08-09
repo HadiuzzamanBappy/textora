@@ -11,6 +11,7 @@ import { BottomPlayer } from "../components/BottomPlayer";
 import { Info } from "lucide-react";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { usePreferences } from "../hooks/usePreferences";
+import { convertMp3ToWav } from "../utils/audioConverter";
 
 const getLanguageName = (code: string) => {
   const map: Record<string, string> = {
@@ -29,8 +30,8 @@ export default function Home() {
   );
   
   const [translatedText, setTranslatedText] = useState("");
-  const [showTranscript, setShowTranscript] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Settings offcanvas open state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -208,17 +209,17 @@ export default function Home() {
     setTranslatedText("");
   }
 
-  // Auto-translate if transcript is shown and translation is missing
+  // Auto-translate the document when translation is toggled on (if not already translated)
   useEffect(() => {
-    if (translationEnabled && showTranscript && sourceText.trim() && !isTranslating) {
-      if (translatedText === "") {
+    if (translationEnabled && sourceText.trim() && !isTranslating) {
+      if (!translatedText) {
         const timeoutId = setTimeout(() => {
           handleTranslate();
-        }, 500); // 500ms debounce
+        }, 500); // 500ms debounce prevents aggressive fetching while typing
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [translationEnabled, showTranscript, translatedText, targetLang, sourceText, handleTranslate, isTranslating]);
+  }, [translationEnabled, translatedText, targetLang, sourceText, handleTranslate, isTranslating]);
 
   // Auto-detect language for voice selection when translation is disabled
   useEffect(() => {
@@ -245,7 +246,7 @@ export default function Home() {
   }, [sourceText, translationEnabled, setVoiceLang]);
 
   // Main playback trigger
-  const handlePlay = React.useCallback(() => {
+  const handlePlay = React.useCallback(async () => {
     if (!sourceText.trim()) return;
 
     if (sourceText.length > 50000) {
@@ -254,14 +255,79 @@ export default function Home() {
     }
 
     if (translationEnabled) {
-      setShowTranscript(true); // Automatically expand transcript view when playing translation
+      if (!translatedText) {
+        // Fallback if the auto-translation hasn't finished yet
+        await handleTranslate();
+      }
       toast.success("Translating & Speaking...", { description: "Processing audio sequentially in the background." });
       speak(sourceText, maxChunkSize, sourceLang, targetLang, translationProvider);
     } else {
       toast.success("Speaking...", { description: "Processing audio sequentially." });
       speak(sourceText, maxChunkSize);
     }
-  }, [sourceText, translationEnabled, speak, maxChunkSize, sourceLang, targetLang, translationProvider]);
+  }, [sourceText, translationEnabled, speak, maxChunkSize, sourceLang, targetLang, translationProvider, handleTranslate, translatedText]);
+
+  // Handle Export MP3/WAV
+  const handleExport = React.useCallback(async (format: 'mp3' | 'wav') => {
+    const textToExport = translationEnabled && translatedText ? translatedText : sourceText;
+    const langToExport = translationEnabled ? targetLang : voiceLang;
+
+    if (!textToExport.trim()) {
+      toast.error("Please enter some text to export.");
+      return;
+    }
+
+    if (textToExport.length > 50000) {
+      toast.error("Document is too large for export (Limit: 50,000 chars).");
+      return;
+    }
+
+    setIsExporting(true);
+    const toastMessage = format === 'wav' 
+      ? "Generating high-quality WAV audio... (this may take a moment)"
+      : "Generating high-quality MP3 audio...";
+    const toastId = toast.loading(toastMessage);
+
+    try {
+      const response = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: textToExport,
+          language: langToExport,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || errorData.error || 'Export failed');
+      }
+
+      let blob = await response.blob();
+      
+      // If the user requested WAV, decode and re-encode the MP3 blob
+      if (format === 'wav') {
+        blob = await convertMp3ToWav(blob);
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `textora-audio.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success(`${format.toUpperCase()} generated and downloaded successfully!`, { id: toastId });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+      toast.error("Export Failed", { id: toastId, description: message });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [sourceText, translatedText, translationEnabled, targetLang, voiceLang]);
 
   // Clear all states, inputs, and stop active speech playback
   const handleClear = React.useCallback(() => {
@@ -302,10 +368,10 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
-      <main className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200 relative transition-colors duration-500">
+      <main className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-rose-500/30 selection:text-rose-200 relative transition-colors duration-500">
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-indigo-500/10 blur-[150px] mix-blend-screen" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-purple-500/10 blur-[150px] mix-blend-screen" />
+          <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-rose-500/10 blur-[150px] mix-blend-screen" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-orange-500/10 blur-[150px] mix-blend-screen" />
         </div>
 
         <Header
@@ -346,8 +412,6 @@ export default function Home() {
             isTranslating={isTranslating}
             currentChunk={currentChunk}
             handleClear={handleClear}
-            showTranscript={showTranscript}
-            setShowTranscript={setShowTranscript}
             translationEnabled={translationEnabled}
             targetLang={targetLang}
           />
@@ -355,7 +419,7 @@ export default function Home() {
           <details className="group bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 max-w-4xl mx-auto w-full overflow-hidden">
             <summary className="p-5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] cursor-pointer select-none flex items-center justify-between hover:bg-[var(--bg-input)] transition-colors">
               <span className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-indigo-400" />
+                <Info className="w-4 h-4 text-rose-400" />
                 Platform Limitations & Diagnostics
               </span>
               <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -366,7 +430,7 @@ export default function Home() {
               <p>
                 <strong className="text-[var(--text-primary)]">Text-to-Speech (TTS) Engine:</strong> Browser-native audio synthesis runs locally via the Web Speech API.
               </p>
-              <ul className="pl-5 space-y-2 list-disc marker:text-indigo-500">
+              <ul className="pl-5 space-y-2 list-disc marker:text-rose-500">
                 <li>
                   <strong className="text-[var(--text-primary)]">iOS Safari / Chrome:</strong> Apple restricts automatic audio playback.
                 </li>
@@ -388,6 +452,7 @@ export default function Home() {
           sourceText={sourceText}
           isTranslating={isTranslating}
           isTranslatingChunk={isTranslatingChunk}
+          isExporting={isExporting}
           translationEnabled={translationEnabled}
           setTranslationEnabled={setTranslationEnabled}
           targetLang={targetLang}
@@ -404,6 +469,7 @@ export default function Home() {
           pause={pause}
           resume={resume}
           stop={stop}
+          handleExport={handleExport}
         />
       </main>
     </ErrorBoundary>

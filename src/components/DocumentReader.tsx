@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Trash2, Type, Languages, ChevronDown, ChevronUp, Upload, FileText } from "lucide-react";
+import { Trash2, Type, Languages, Upload, FileText } from "lucide-react";
 import { cn } from "../utils/cn";
 import { toast } from "sonner";
 import { SUPPORTED_LANGUAGES } from "../utils/languages";
@@ -12,8 +12,6 @@ interface DocumentReaderProps {
   isPlaying: boolean;
   isTranslating: boolean;
   handleClear: () => void;
-  showTranscript: boolean;
-  setShowTranscript: (show: boolean) => void;
   translationEnabled: boolean;
   targetLang: string;
   currentChunk?: number;
@@ -27,8 +25,6 @@ export function DocumentReader({
   isPlaying,
   isTranslating,
   handleClear,
-  showTranscript,
-  setShowTranscript,
   translationEnabled,
   targetLang,
   currentChunk = 0,
@@ -88,7 +84,7 @@ export function DocumentReader({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     if (isPlaying || isTranslating) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -110,27 +106,33 @@ export function DocumentReader({
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 relative z-10 transition-all duration-500">
-      
+    <div className={cn(
+      "w-full mx-auto gap-6 relative z-10 transition-all duration-500",
+      translationEnabled
+        ? "flex flex-col lg:flex-row justify-center items-stretch"
+        : "flex flex-col max-w-4xl"
+    )}>
+
       {/* Main Document Input */}
-      <div 
+      <div
         className={cn(
           "bg-[var(--bg-card)] border rounded-2xl p-6 backdrop-blur-md shadow-xl flex flex-col gap-4 relative overflow-hidden group transition-all duration-300",
-          isDragging ? "border-indigo-500/80 bg-indigo-500/5 shadow-indigo-500/20 scale-[1.01]" : "border-[var(--border-card)] hover:shadow-indigo-500/5"
+          translationEnabled ? "w-full lg:w-[640px]" : "w-full",
+          isDragging ? "border-rose-500/80 bg-rose-500/5 shadow-rose-500/20 scale-[1.01]" : "border-[var(--border-card)] hover:shadow-rose-500/5"
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/5 rounded-full blur-[50px] pointer-events-none group-hover:bg-indigo-500/10 transition-colors duration-500" />
-        
+        <div className="absolute top-0 right-0 w-40 h-40 bg-rose-500/5 rounded-full blur-[50px] pointer-events-none group-hover:bg-rose-500/10 transition-colors duration-500" />
+
         {/* Drag Overlay */}
         {isDragging && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[var(--bg-card)]/80 backdrop-blur-sm border-2 border-dashed border-indigo-500/50 rounded-2xl pointer-events-none animate-in fade-in duration-200">
-            <div className="p-4 bg-indigo-500/10 rounded-full mb-3">
-              <FileText className="w-8 h-8 text-indigo-400" />
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[var(--bg-card)]/80 backdrop-blur-sm border-2 border-dashed border-rose-500/50 rounded-2xl pointer-events-none animate-in fade-in duration-200">
+            <div className="p-4 bg-rose-500/10 rounded-full mb-3">
+              <FileText className="w-8 h-8 text-rose-400" />
             </div>
-            <p className="text-lg font-bold text-indigo-400">Drop your file here</p>
+            <p className="text-lg font-bold text-rose-400">Drop your file here</p>
             <p className="text-sm text-[var(--text-secondary)] mt-1">Accepts .txt, .md, .csv</p>
           </div>
         )}
@@ -138,32 +140,32 @@ export function DocumentReader({
         <div className="flex items-center justify-between relative z-10">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm">
-              <Type className="w-4 h-4 text-indigo-400" />
+              <Type className="w-4 h-4 text-rose-400" />
             </div>
             <span className="text-sm font-bold uppercase tracking-widest text-[var(--text-secondary)]">
               Document
             </span>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileInput} 
-              className="hidden" 
-              accept=".txt,.md,.csv,.json,text/*" 
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileInput}
+              className="hidden"
+              accept=".txt,.md,.csv,.json,text/*"
             />
             <button
               onClick={handleUploadClick}
               disabled={isPlaying || isTranslating}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-primary)] hover:text-indigo-400 hover:border-indigo-500/40 transition-all text-xs font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-primary)] hover:text-rose-400 hover:border-rose-500/40 transition-all text-xs font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Upload className="w-3.5 h-3.5" />
               Upload File
             </button>
             <button
               onClick={handleClear}
-              disabled={isPlaying || isTranslating}
+              disabled={isPlaying || isTranslating || !sourceText.trim()}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-transparent text-[var(--text-secondary)] hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 transition-all text-xs font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -179,8 +181,8 @@ export function DocumentReader({
                 key={index}
                 className={cn(
                   "transition-colors duration-300 rounded-[4px] px-0.5",
-                  index === currentChunk - 1 
-                    ? "bg-indigo-500/30 text-indigo-100 font-medium shadow-[0_0_15px_rgba(99,102,241,0.2)]" 
+                  index === currentChunk - 1
+                    ? "bg-rose-500/20 dark:bg-rose-500/30 text-rose-900 dark:text-rose-100 font-semibold shadow-[0_0_15px_rgba(99,102,241,0.2)]"
                     : "text-[var(--text-primary)] opacity-80"
                 )}
               >
@@ -208,55 +210,54 @@ export function DocumentReader({
 
       {/* Optional Transcript view if translation is enabled */}
       {translationEnabled && (
-        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-5 backdrop-blur-sm shadow-md flex flex-col gap-4 relative overflow-hidden transition-all duration-300">
-          <button 
-            onClick={() => setShowTranscript(!showTranscript)}
-            className="flex items-center justify-between w-full focus:outline-none group/btn"
-          >
+        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 backdrop-blur-sm shadow-xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300 w-full lg:w-[400px]">
+
+          <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-md shadow-sm">
-                <Languages className="w-4 h-4 text-purple-400" />
+                <Languages className="w-4 h-4 text-orange-400" />
               </div>
-              <span className="text-sm font-bold uppercase tracking-widest text-[var(--text-secondary)] group-hover/btn:text-[var(--text-primary)] transition-colors">
-                Live {languageName} Transcript
+              <span className="text-sm font-bold uppercase tracking-widest text-[var(--text-secondary)]">
+                {languageName} Transcript
               </span>
             </div>
-            <div className="text-[var(--text-secondary)] group-hover/btn:text-[var(--text-primary)] p-1 rounded-full bg-[var(--bg-input)] border border-[var(--border-input)] transition-all">
-              {showTranscript ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </div>
-          </button>
+          </div>
 
-          {showTranscript && (
-            <div className="mt-2 pt-4 border-t border-[var(--border-input)] animate-in slide-in-from-top-4 fade-in duration-300">
-              {isPlaying ? (
-                <div className="w-full min-h-[20vh] max-h-[40vh] overflow-y-auto bg-transparent border-none text-[var(--text-primary)] text-base leading-relaxed focus:outline-none custom-scrollbar italic opacity-90 whitespace-pre-wrap">
-                  {chunkText(translatedText || "", maxChunkSize).map((chunk, index) => (
-                    <span
-                      key={index}
-                      className={cn(
-                        "transition-colors duration-300 rounded-[4px] px-0.5",
-                        index === currentChunk - 1
-                          ? "bg-purple-500/30 text-purple-100 font-medium shadow-[0_0_15px_rgba(168,85,247,0.2)]"
-                          : ""
-                      )}
-                    >
-                      {chunk}{" "}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <textarea
-                  readOnly
-                  value={translatedText || ""}
-                  className="w-full min-h-[20vh] bg-transparent border-none text-[var(--text-primary)] text-base leading-relaxed resize-none focus:outline-none custom-scrollbar italic opacity-90"
-                  placeholder="The translated text will appear here as it is being processed..."
-                />
-              )}
-            </div>
-          )}
+          <div className="flex-1 flex flex-col relative z-10">
+            {isPlaying ? (
+              <div className="w-full flex-1 min-h-[250px] max-h-[50vh] overflow-y-auto bg-transparent border-none p-2 text-base leading-relaxed focus:outline-none custom-scrollbar italic opacity-90 whitespace-pre-wrap">
+                {chunkText(translatedText || "", maxChunkSize).map((chunk, index) => (
+                  <span
+                    key={index}
+                    className={cn(
+                      "transition-colors duration-300 rounded-[4px] px-0.5",
+                      index === currentChunk - 1
+                        ? "bg-orange-500/20 dark:bg-orange-500/30 text-orange-900 dark:text-orange-100 font-semibold shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                        : ""
+                    )}
+                  >
+                    {chunk}{" "}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <textarea
+                readOnly
+                value={translatedText || ""}
+                className="w-full flex-1 min-h-[250px] max-h-[50vh] bg-transparent border-none p-2 text-[var(--text-primary)] text-base leading-relaxed resize-none focus:outline-none custom-scrollbar italic opacity-90"
+                placeholder="The translated text will appear here as it is being processed..."
+              />
+            )}
+          </div>
+
+          <div className="flex items-center justify-end border-t border-[var(--border-input)] pt-3 relative z-10">
+            <span className="text-xs text-[var(--text-muted)] font-mono bg-[var(--bg-input)] px-2.5 py-1 rounded-md border border-[var(--border-input)] shadow-sm">
+              {(translatedText || "").length.toLocaleString()} chars
+            </span>
+          </div>
         </div>
       )}
-      
+
     </div>
   );
 }

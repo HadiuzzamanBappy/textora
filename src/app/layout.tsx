@@ -17,6 +17,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Textora — Progressive TTS Translator",
   description: "Translate large text progressively and speak it sequentially in real-time.",
+  icons: {
+    icon: [
+      { url: '/favicon/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+      { url: '/favicon/favicon.svg', type: 'image/svg+xml' }
+    ],
+    shortcut: '/favicon/favicon.ico',
+    apple: '/favicon/apple-touch-icon.png',
+  },
+  manifest: '/favicon/site.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
