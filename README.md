@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Textora — Progressive TTS Translation PWA
 
-## Getting Started
+Textora is a secure, browser-native, text-to-speech translation Progressive Web Application (PWA). It chunks large text documents client-side, translates them progressively in the background, and synthesizes audio streams locally on the device with zero cloud audio costs.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 1. Local Development Setup
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+To run Textora locally:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Clone & Install Dependencies**:
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Configure Environment Variables**:
+   Copy `.env.example` to `.env.local`:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Open `.env.local` and configure your active translation provider.
 
-## Learn More
+3. **Start the Development Server**:
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) in your web browser.
 
-To learn more about Next.js, take a look at the following resources:
+4. **Run Unit Tests**:
+   ```bash
+   npm run test
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 2. Environment Variables
 
-## Deploy on Vercel
+Textora supports three translation providers configured server-side.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Key | Supported Values | Description |
+| :--- | :--- | :--- |
+| `TRANSLATION_PROVIDER` | `mock` \| `deepl` \| `google` | Selects active translation service. (Default is `mock`). |
+| `DEEPL_API_KEY` | `your_deepl_api_key` | Required only if `TRANSLATION_PROVIDER=deepl`. |
+| `GOOGLE_TRANSLATE_API_KEY` | `your_google_api_key` | Required only if `TRANSLATION_PROVIDER=google`. |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 3. Vercel Deployment Configuration
+
+Textora is fully compatible with Vercel's Serverless execution model.
+
+### Steps to Deploy:
+1. **Push Code to Git**: Push your project repository to GitHub, GitLab, or Bitbucket.
+2. **Import into Vercel**:
+   - Log into the Vercel Dashboard and click **Add New** -> **Project**.
+   - Import your repository.
+3. **Set Environment Variables**:
+   - Under the **Environment Variables** accordion during project setup, add:
+     - `TRANSLATION_PROVIDER` = `google` or `deepl`
+     - `GOOGLE_TRANSLATE_API_KEY` or `DEEPL_API_KEY` = *[Your Secret Key]*
+4. **Deploy**: Click **Deploy**. Vercel will build the frontend, deploy serverless functions, and generate PWA manifest routes statically.
+
+---
+
+## 4. Production Testing Procedure
+
+Verify the live deployment on mobile and desktop:
+
+1. **PWA Registration**:
+   - Inspect Chrome DevTools -> **Application** -> **Service Workers** to confirm `/sw.js` is registered.
+   - Confirm that the install badge (add to home screen) appears in compatible browsers.
+2. **Translation & Pipeline Tests**:
+   - Input a large document (>5,000 characters) and verify the static translation panel blocks it with a warning.
+   - Click **Translate & Speak Pipeline**. Confirm the document splits, calls the translation API chunk-by-chunk sequentially, and plays audio within a second.
+3. **Queue Interrupts & Restarts**:
+   - Click **Stop** mid-speech; verify all background fetches and synthesis threads halt immediately.
+   - Change voice/speed rates during speech and ensure updates take effect instantly.
