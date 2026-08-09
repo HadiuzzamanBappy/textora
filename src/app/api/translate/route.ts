@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getTranslator } from "../../../services/translator";
+import { SUPPORTED_LANGUAGES } from "../../../utils/languages";
 
 export async function POST(request: Request) {
   try {
@@ -24,14 +25,14 @@ export async function POST(request: Request) {
       errors.push("Text size exceeds the maximum limit of 5000 characters.");
     }
 
-    const supportedLanguages = ["en", "es", "fr", "de"];
+    const supportedLanguages = SUPPORTED_LANGUAGES.map(l => l.code);
 
-    if (typeof sourceLanguage !== "string" || !supportedLanguages.includes(sourceLanguage)) {
-      errors.push(`Source language is invalid or unsupported. Must be one of: ${supportedLanguages.join(", ")}`);
+    if (typeof sourceLanguage !== "string" || (sourceLanguage !== "auto" && !supportedLanguages.includes(sourceLanguage))) {
+      errors.push(`Source language is invalid or unsupported.`);
     }
 
     if (typeof targetLanguage !== "string" || !supportedLanguages.includes(targetLanguage)) {
-      errors.push(`Target language is invalid or unsupported. Must be one of: ${supportedLanguages.join(", ")}`);
+      errors.push(`Target language is invalid or unsupported.`);
     }
 
     if (errors.length > 0) {

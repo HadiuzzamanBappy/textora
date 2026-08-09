@@ -189,7 +189,7 @@ export function useSpeechSynthesis() {
             const translationApi =
               (window as unknown as { translation?: { capabilities: () => Promise<{ canTranslate: (o: { sourceLanguage: string; targetLanguage: string }) => string }>; create: (o: { sourceLanguage: string; targetLanguage: string }) => Promise<{ translate: (t: string) => Promise<string> }> } }).translation ||
               (window as unknown as { ai?: { translator?: { capabilities: () => Promise<{ canTranslate: (o: { sourceLanguage: string; targetLanguage: string }) => string }>; create: (o: { sourceLanguage: string; targetLanguage: string }) => Promise<{ translate: (t: string) => Promise<string> }> } } }).ai?.translator;
-            if (translationApi) {
+            if (translationApi && sourceLang !== "auto") {
               const capabilities = await translationApi.capabilities();
               const canTranslate = capabilities.canTranslate({
                 sourceLanguage: sourceLang,
