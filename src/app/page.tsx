@@ -8,7 +8,6 @@ import { Header } from "../components/Header";
 import { SettingsOffcanvas } from "../components/SettingsOffcanvas";
 import { DocumentReader } from "../components/DocumentReader";
 import { BottomPlayer } from "../components/BottomPlayer";
-import { Info } from "lucide-react";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { usePreferences } from "../hooks/usePreferences";
 import { convertMp3ToWav } from "../utils/audioConverter";
@@ -419,33 +418,7 @@ export default function Home() {
             maxChunkSize={maxChunkSize}
           />
 
-          <details className="group bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 max-w-4xl mx-auto w-full overflow-hidden">
-            <summary className="p-5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] cursor-pointer select-none flex items-center justify-between hover:bg-[var(--bg-input)] transition-colors">
-              <span className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-rose-400" />
-                Platform Limitations & Diagnostics
-              </span>
-              <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="px-5 pb-5 pt-4 text-sm text-[var(--text-secondary)] space-y-4 leading-relaxed border-t border-[var(--border-input)]">
-              <p>
-                <strong className="text-[var(--text-primary)]">Text-to-Speech (TTS) Engine:</strong> Browser-native audio synthesis runs locally via the Web Speech API.
-              </p>
-              <ul className="pl-5 space-y-2 list-disc marker:text-rose-500">
-                <li>
-                  <strong className="text-[var(--text-primary)]">iOS Safari / Chrome:</strong> Apple restricts automatic audio playback.
-                </li>
-                <li>
-                  <strong className="text-[var(--text-primary)]">Voice Options:</strong> Voices are device-specific.
-                </li>
-                <li>
-                  <strong className="text-[var(--text-primary)]">Keyless Translation Mode:</strong> Translation utilizes your browser&apos;s native API or falls back to a free provider.
-                </li>
-              </ul>
-            </div>
-          </details>
+
         </div>
 
         <BottomPlayer

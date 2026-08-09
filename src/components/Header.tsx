@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { Settings, Moon, Sun } from "lucide-react";
+import { Settings, Moon, Sun, Info } from "lucide-react";
 import { cn } from "../utils/cn";
 
 interface HeaderProps {
@@ -30,14 +30,42 @@ export function Header({ theme, toggleTheme, onOpenSettings }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={onOpenSettings}
-            aria-label="Open Settings"
-            className="p-2.5 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-rose-400 hover:border-rose-500/50 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all cursor-pointer group"
-          >
-            <Settings className="w-4.5 h-4.5 transition-transform duration-500 group-hover:rotate-90" />
-          </button>
-
+          <div className="relative group/info flex items-center">
+            <button
+              aria-label="Platform Limitations & Diagnostics"
+              className="p-2.5 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-orange-400 hover:border-orange-500/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.15)] transition-all cursor-pointer group"
+            >
+              <Info className="w-4.5 h-4.5 transition-transform duration-500 group-hover:scale-110" />
+            </button>
+            
+            {/* Flyout menu */}
+            <div className="absolute top-full right-0 pt-3 opacity-0 -translate-y-2 pointer-events-none group-hover/info:opacity-100 group-hover/info:translate-y-0 group-hover/info:pointer-events-auto transition-all duration-300 z-50 w-80">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-hidden flex flex-col backdrop-blur-xl">
+                <div className="p-4 bg-orange-500/10 border-b border-orange-500/20">
+                  <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+                    <Info className="w-3.5 h-3.5" />
+                    Limitations & Diagnostics
+                  </span>
+                </div>
+                <div className="p-5 text-xs text-[var(--text-secondary)] space-y-4 leading-relaxed">
+                  <p>
+                    <strong className="text-[var(--text-primary)]">TTS Engine:</strong> Browser-native audio synthesis runs locally via the Web Speech API.
+                  </p>
+                  <ul className="pl-4 space-y-2 list-disc marker:text-orange-500">
+                    <li>
+                      <strong className="text-[var(--text-primary)]">iOS Safari / Chrome:</strong> Apple restricts automatic audio playback.
+                    </li>
+                    <li>
+                      <strong className="text-[var(--text-primary)]">Voice Options:</strong> Voices are device-specific.
+                    </li>
+                    <li>
+                      <strong className="text-[var(--text-primary)]">Keyless Translation:</strong> Utilizes your browser&apos;s native API or falls back to a free provider.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
           <button
             onClick={toggleTheme}
             aria-label="Toggle Theme"
@@ -57,6 +85,14 @@ export function Header({ theme, toggleTheme, onOpenSettings }: HeaderProps) {
                 )}
               />
             </div>
+          </button>
+
+          <button
+            onClick={onOpenSettings}
+            aria-label="Open Settings"
+            className="p-2.5 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-rose-400 hover:border-rose-500/50 hover:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all cursor-pointer group"
+          >
+            <Settings className="w-4.5 h-4.5 transition-transform duration-500 group-hover:rotate-90" />
           </button>
         </div>
       </div>
