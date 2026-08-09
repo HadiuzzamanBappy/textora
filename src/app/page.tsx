@@ -18,6 +18,31 @@ export default function Home() {
   const [translationError, setTranslationError] = useState<string | null>(null);
   const [maxChunkSize, setMaxChunkSize] = useState(200);
 
+  // Theme state setup
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+  React.useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const isLight = document.documentElement.classList.contains("light");
+      setTheme(isLight ? "light" : "dark");
+    }, 0);
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.remove("light");
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
+      localStorage.setItem("theme", "light");
+    }
+  };
+
   // Sequential Speech synthesiser hook
   const {
     isPlaying,
@@ -150,16 +175,16 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative overflow-hidden">
+    <main className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-indigo-500 selection:text-white relative overflow-hidden transition-colors">
       {/* Background gradients for premium ambient feel */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/10 blur-[120px] pointer-events-none" />
 
       {/* Header */}
-      <header className="border-b border-slate-900/60 bg-slate-950/70 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b border-[var(--border-bottom)] bg-[var(--bg-header)] backdrop-blur-md sticky top-0 z-50 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl overflow-hidden relative shadow-lg shadow-indigo-500/10 border border-slate-800">
+            <div className="w-8 h-8 rounded-xl overflow-hidden relative shadow-lg shadow-indigo-500/10 border border-[var(--border-input)]">
               <Image
                 src="/logo.png"
                 alt="Textora Logo"
@@ -169,13 +194,30 @@ export default function Home() {
                 priority
               />
             </div>
-            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-[var(--text-primary)] to-[var(--text-secondary)] bg-clip-text text-transparent">
               Textora
             </span>
           </div>
-          <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            PRO
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle Theme"
+              className="p-2 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer shadow-sm"
+            >
+              {theme === "dark" ? (
+                <svg className="w-4 h-4 animate-[spin_4s_linear_infinite]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M14 12a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              )}
+            </button>
+            <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+              PRO
+            </span>
+          </div>
         </div>
       </header>
 
@@ -197,9 +239,9 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
           
           {/* Source Column */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm flex flex-col gap-4 shadow-xl">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-5 backdrop-blur-sm flex flex-col gap-4 shadow-xl">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                 Source Document
               </span>
               <select
@@ -207,7 +249,7 @@ export default function Home() {
                 value={sourceLang}
                 onChange={(e) => setSourceLang(e.target.value)}
                 disabled={isPlaying || isTranslating}
-                className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
+                className="bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-secondary)] text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
               >
                 <option value="en">English (US)</option>
                 <option value="es">Spanish (ES)</option>
@@ -221,27 +263,27 @@ export default function Home() {
               value={sourceText}
               onChange={(e) => setSourceText(e.target.value)}
               disabled={isPlaying || isTranslating}
-              className="w-full flex-1 min-h-[220px] bg-slate-950/60 border border-slate-800/60 rounded-xl p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/80 transition-all resize-none text-sm leading-relaxed disabled:opacity-60"
+              className="w-full flex-1 min-h-[220px] bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl p-4 text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/80 transition-all resize-none text-sm leading-relaxed disabled:opacity-60"
               placeholder="Type or paste your text here..."
             />
 
-            <div className="flex items-center justify-between border-t border-slate-850 pt-3">
+            <div className="flex items-center justify-between border-t border-[var(--border-input)] pt-3">
               <button
                 onClick={handleClear}
-                className="px-3.5 py-1.5 rounded-lg border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all text-xs font-medium"
+                className="px-3.5 py-1.5 rounded-lg border border-[var(--border-input)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-input)] transition-all text-xs font-medium cursor-pointer"
               >
                 Clear All
               </button>
               
               <div className="flex items-center gap-4">
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-[var(--text-muted)] font-mono">
                   {sourceText.length} chars
                 </span>
                 
                 <button
                   onClick={handleTranslate}
                   disabled={isTranslating || !sourceText.trim() || isPlaying}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold bg-slate-800 hover:bg-slate-750 text-white transition-all text-xs border border-slate-700 shadow-md disabled:opacity-40"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold bg-[var(--bg-input)] hover:opacity-90 text-[var(--text-primary)] transition-all text-xs border border-[var(--border-input)] shadow-md disabled:opacity-40 cursor-pointer"
                 >
                   {isTranslating ? (
                     <>
@@ -263,9 +305,10 @@ export default function Home() {
           </div>
 
           {/* Target / Audio Panel Column */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm flex flex-col gap-4 shadow-xl">
+          {/* Target / Audio Panel Column */}
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-5 backdrop-blur-sm flex flex-col gap-4 shadow-xl">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                 Translation Output
               </span>
               <select
@@ -273,7 +316,7 @@ export default function Home() {
                 value={targetLang}
                 onChange={(e) => setTargetLang(e.target.value)}
                 disabled={isPlaying || isTranslating}
-                className="bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
+                className="bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-secondary)] text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
               >
                 <option value="es">Spanish (ES)</option>
                 <option value="en">English (US)</option>
@@ -286,11 +329,11 @@ export default function Home() {
               aria-label="Translated Text Output"
               value={translatedText}
               onChange={(e) => setTranslatedText(e.target.value)}
-              className="w-full flex-1 min-h-[220px] bg-slate-950/20 border border-slate-850 rounded-xl p-4 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 resize-none text-sm leading-relaxed"
+              className="w-full flex-1 min-h-[220px] bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl p-4 text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-indigo-500/50 resize-none text-sm leading-relaxed"
               placeholder="Translated text will appear here. Or trigger the progressive pipeline below to translate and play sequentially on-the-fly."
             />
 
-            <div className="flex items-center justify-between border-t border-slate-850 pt-3 text-xs text-slate-500">
+            <div className="flex items-center justify-between border-t border-[var(--border-input)] pt-3 text-xs text-[var(--text-muted)]">
               <span className="font-mono">{translatedText.length} chars</span>
               <span>Edit output directly if desired</span>
             </div>
@@ -299,17 +342,17 @@ export default function Home() {
         </div>
 
         {/* Global Pipeline control console */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-6">
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* Control 1: Select Voice */}
             <div className="flex flex-col gap-2">
-              <label htmlFor="voice-select" className="text-xs font-bold tracking-wider text-slate-400 uppercase">
+              <label htmlFor="voice-select" className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
                 Speaker Voice
               </label>
               {availableVoices.length === 0 ? (
-                <div className="text-xs text-slate-500 bg-slate-950/40 border border-slate-950 rounded-xl px-3 py-2">
+                <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-3 py-2">
                   No system voices available.
                 </div>
               ) : (
@@ -317,7 +360,7 @@ export default function Home() {
                   id="voice-select"
                   value={selectedVoice?.name || ""}
                   onChange={handleVoiceChange}
-                  className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
                 >
                   {availableVoices.map((voice) => (
                     <option key={voice.name} value={voice.name}>
@@ -331,7 +374,7 @@ export default function Home() {
             {/* Control 2: Speech Speed */}
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <label htmlFor="speech-rate" className="text-xs font-bold tracking-wider text-slate-400 uppercase font-sans">
+                <label htmlFor="speech-rate" className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase font-sans">
                   Voice Speed
                 </label>
                 <span className="text-xs font-bold text-indigo-400 font-mono">{speechRate.toFixed(1)}x</span>
@@ -344,9 +387,9 @@ export default function Home() {
                 step="0.1"
                 value={speechRate}
                 onChange={handleRateChange}
-                className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500"
               />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
                 <span>0.5x</span>
                 <span>1.0x (Normal)</span>
                 <span>2.0x</span>
@@ -356,7 +399,7 @@ export default function Home() {
             {/* Control 3: Max Chunk Size */}
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <label htmlFor="chunk-size" className="text-xs font-bold tracking-wider text-slate-400 uppercase">
+                <label htmlFor="chunk-size" className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
                   Text Segmentation Limit
                 </label>
                 <span className="text-xs font-bold text-indigo-400 font-mono">{maxChunkSize} chars</span>
@@ -369,9 +412,9 @@ export default function Home() {
                 step="25"
                 value={maxChunkSize}
                 onChange={handleChunkSizeChange}
-                className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500"
               />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+              <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
                 <span>50 chars</span>
                 <span>200 chars (Default)</span>
                 <span>500 chars</span>
@@ -382,7 +425,7 @@ export default function Home() {
 
           {/* Active play status and progress bar */}
           {(isPlaying || progress > 0 || isTranslatingChunk) && (
-            <div className="bg-slate-950/40 border border-slate-850/60 rounded-xl p-4 space-y-3">
+            <div className="bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="relative flex h-2 w-2">
@@ -398,7 +441,7 @@ export default function Home() {
                     )}
                   </span>
                   
-                  <span className="text-xs font-semibold text-slate-300">
+                  <span className="text-xs font-semibold text-[var(--text-secondary)]">
                     {isTranslatingChunk
                       ? `Translating Chunk ${currentChunk} / ${totalChunks}...`
                       : isPlaying && !isPaused
@@ -422,11 +465,11 @@ export default function Home() {
 
               {/* Progress bar */}
               <div className="space-y-1">
-                <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
                   <span>Synthesis Queue</span>
                   <span>{progress}%</span>
                 </div>
-                <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-[var(--bg-main)] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-300 ease-out"
                     style={{ width: `${progress}%` }}
@@ -443,7 +486,7 @@ export default function Home() {
             <button
               onClick={handleSpeakPipeline}
               disabled={!sourceText.trim() || isTranslating}
-              className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] text-sm"
+              className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] text-sm cursor-pointer"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
@@ -455,7 +498,7 @@ export default function Home() {
             <button
               onClick={() => speak(translatedText || sourceText, maxChunkSize)}
               disabled={(!translatedText.trim() && !sourceText.trim()) || isTranslating}
-              className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold bg-slate-800 hover:bg-slate-750 text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 border border-slate-750 text-sm shadow-md"
+              className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold bg-[var(--bg-input)] hover:opacity-95 text-[var(--text-primary)] disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 border border-[var(--border-input)] text-sm shadow-md cursor-pointer"
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
@@ -469,7 +512,7 @@ export default function Home() {
                 {isPlaying && !isPaused ? (
                   <button
                     onClick={pause}
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all duration-200 shadow-md"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold bg-[var(--bg-input)] hover:opacity-90 text-[var(--text-primary)] border border-[var(--border-input)] transition-all duration-200 shadow-md cursor-pointer"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
@@ -479,7 +522,7 @@ export default function Home() {
                 ) : isPlaying && isPaused ? (
                   <button
                     onClick={resume}
-                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 transition-all duration-200 shadow-md"
+                    className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 transition-all duration-200 shadow-md cursor-pointer"
                   >
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
@@ -490,7 +533,7 @@ export default function Home() {
 
                 <button
                   onClick={stop}
-                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 transition-all duration-200 shadow-md"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 transition-all duration-200 shadow-md cursor-pointer"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M6 6h12v12H6z" />
@@ -505,15 +548,15 @@ export default function Home() {
         </div>
 
         {/* PWA / Browser limits diagnostic section */}
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm shadow-xl">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-5 backdrop-blur-sm shadow-xl">
           <details className="group">
-            <summary className="text-xs font-bold uppercase tracking-wider text-slate-400 cursor-pointer select-none flex items-center justify-between">
+            <summary className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] cursor-pointer select-none flex items-center justify-between">
               <span>Platform Limitations & Diagnostics</span>
               <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </summary>
-            <div className="mt-4 text-xs text-slate-400 space-y-3 leading-relaxed border-t border-slate-850 pt-4">
+            <div className="mt-4 text-xs text-[var(--text-secondary)] space-y-3 leading-relaxed border-t border-[var(--border-input)] pt-4">
               <p>
                 <strong>Text-to-Speech (TTS) Engine:</strong> Browser-native audio synthesis runs locally via the Web Speech API (`window.speechSynthesis`). Behavior and features vary by browser and platform:
               </p>
@@ -538,7 +581,7 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900/60 bg-slate-950 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-[var(--border-bottom)] bg-[var(--bg-header)] py-6 text-center text-xs text-[var(--text-muted)] transition-colors">
         <p>© 2026 Textora. Local Audio Synthesis & Secured Server Translation. All rights reserved.</p>
       </footer>
     </main>
