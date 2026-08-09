@@ -64,25 +64,62 @@ export default function Home() {
     setTranslationError(null);
 
     try {
-      const response = await fetch("/api/translate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text: sourceText,
-          sourceLanguage: sourceLang,
-          targetLanguage: targetLang,
-        }),
-      });
+      const provider = process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER || "mock";
 
-      const data = await response.json();
+      if (provider === "browser") {
+        const translationApi =
+          (window as unknown as { translation?: { capabilities: () => Promise<{ canTranslate: (o: { sourceLanguage: string; targetLanguage: string }) => string }>; create: (o: { sourceLanguage: string; targetLanguage: string }) => Promise<{ translate: (t: string) => Promise<string> }> } }).translation ||
+          (window as unknown as { ai?: { translator?: { capabilities: () => Promise<{ canTranslate: (o: { sourceLanguage: string; targetLanguage: string }) => string }>; create: (o: { sourceLanguage: string; targetLanguage: string }) => Promise<{ translate: (t: string) => Promise<string> }> } } }).ai?.translator;
+        if (translationApi) {
+          const capabilities = await translationApi.capabilities();
+          const canTranslate = capabilities.canTranslate({
+            sourceLanguage: sourceLang,
+            targetLanguage: targetLang,
+          });
 
-      if (!response.ok) {
-        throw new Error(data.error || data.details?.join(", ") || "Failed to translate");
+          if (canTranslate !== "no") {
+            const translator = await translationApi.create({
+              sourceLanguage: sourceLang,
+              targetLanguage: targetLang,
+            });
+            const result = await translator.translate(sourceText);
+            setTranslatedText(result);
+          } else {
+            throw new Error("Local browser translation pair not supported.");
+          }
+        } else {
+          // Free scraping Google Translation fallback
+          const freeUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(sourceText)}`;
+          const res = await fetch(freeUrl);
+          if (res.ok) {
+            const data = await res.json() as [[[string, string]]];
+            const result = data[0].map((x) => x[0]).join("");
+            setTranslatedText(result);
+          } else {
+            throw new Error("Fallback Google Scraping Translation failed.");
+          }
+        }
+      } else {
+        const response = await fetch("/api/translate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: sourceText,
+            sourceLanguage: sourceLang,
+            targetLanguage: targetLang,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || data.details?.join(", ") || "Failed to translate");
+        }
+
+        setTranslatedText(data.translatedText);
       }
-
-      setTranslatedText(data.translatedText);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Translation service is currently unavailable.";
       setTranslationError(message);
@@ -486,6 +523,9 @@ export default function Home() {
                 </li>
                 <li>
                   <strong>Voice Options:</strong> Voices are device-specific. Premium voice models (like {"Apple's"} Siri voices or Google{"'s"} neural models) depend on your OS, and Safari/Chrome will load different voice profiles.
+                </li>
+                <li>
+                  <strong>Keyless Translation Mode:</strong> Setting `NEXT_PUBLIC_TRANSLATION_PROVIDER=browser` enables 100% free translation utilizing your browser{"'s"} native `window.translation` API, or falls back automatically to Google{"'s"} keyless Web translation interface.
                 </li>
                 <li>
                   <strong>Static vs Pipeline limits:</strong> Full static translation handles text up to 5,000 characters. For larger documents up to 50,000 characters, use the {"\"Translate & Speak Pipeline\""} which segments, translates, and plays sequentially to bypass single-request thresholds.

@@ -183,25 +183,60 @@ export function useSpeechSynthesis() {
       if (sourceLang && targetLang && sourceLang !== targetLang) {
         setState((prev) => ({ ...prev, isTranslatingChunk: true }));
         try {
-          const response = await fetch("/api/translate", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              text: textToSpeak,
-              sourceLanguage: sourceLang,
-              targetLanguage: targetLang,
-            }),
-          });
+          const provider = process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER || "mock";
 
-          if (session !== sessionRef.current) return;
+          if (provider === "browser") {
+            const translationApi =
+              (window as unknown as { translation?: { capabilities: () => Promise<{ canTranslate: (o: { sourceLanguage: string; targetLanguage: string }) => string }>; create: (o: { sourceLanguage: string; targetLanguage: string }) => Promise<{ translate: (t: string) => Promise<string> }> } }).translation ||
+              (window as unknown as { ai?: { translator?: { capabilities: () => Promise<{ canTranslate: (o: { sourceLanguage: string; targetLanguage: string }) => string }>; create: (o: { sourceLanguage: string; targetLanguage: string }) => Promise<{ translate: (t: string) => Promise<string> }> } } }).ai?.translator;
+            if (translationApi) {
+              const capabilities = await translationApi.capabilities();
+              const canTranslate = capabilities.canTranslate({
+                sourceLanguage: sourceLang,
+                targetLanguage: targetLang,
+              });
 
-          if (response.ok) {
-            const data = await response.json();
-            textToSpeak = data.translatedText;
+              if (canTranslate !== "no") {
+                const translator = await translationApi.create({
+                  sourceLanguage: sourceLang,
+                  targetLanguage: targetLang,
+                });
+                textToSpeak = await translator.translate(textToSpeak);
+              } else {
+                throw new Error("Local browser translation pair not supported.");
+              }
+            } else {
+              // Free scraping Google Translation fallback
+              const freeUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(textToSpeak)}`;
+              const res = await fetch(freeUrl);
+              if (res.ok) {
+                const data = await res.json() as [[[string, string]]];
+                textToSpeak = data[0].map((x) => x[0]).join("");
+              } else {
+                throw new Error("Fallback Google Scraping failed.");
+              }
+            }
           } else {
-            console.warn(`Translation failed for chunk index ${index}, falling back to original text.`);
+            const response = await fetch("/api/translate", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                text: textToSpeak,
+                sourceLanguage: sourceLang,
+                targetLanguage: targetLang,
+              }),
+            });
+
+            if (session !== sessionRef.current) return;
+
+            if (response.ok) {
+              const data = await response.json();
+              textToSpeak = data.translatedText;
+            } else {
+              console.warn(`Translation failed for chunk index ${index}, falling back to original text.`);
+            }
           }
         } catch (err) {
           if (session !== sessionRef.current) return;

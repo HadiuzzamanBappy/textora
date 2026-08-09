@@ -93,7 +93,7 @@ export class GoogleTranslator implements Translator {
 }
 
 export function getTranslator(): Translator {
-  const provider = process.env.TRANSLATION_PROVIDER || "mock";
+  const provider = process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER || "mock";
 
   switch (provider.toLowerCase()) {
     case "google": {
