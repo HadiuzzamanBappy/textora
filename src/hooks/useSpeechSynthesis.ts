@@ -14,6 +14,7 @@ export interface SpeechSynthesisState {
   progress: number; // 0 to 100
   isTranslatingChunk: boolean; // True when fetch is in flight
   isSupported: boolean; // True if browser supports SpeechSynthesis
+  currentCharIndex: number; // For word-level tracking
 }
 
 export function useSpeechSynthesis() {
@@ -28,6 +29,7 @@ export function useSpeechSynthesis() {
     progress: 0,
     isTranslatingChunk: false,
     isSupported: true, // Default to true until checked in client mount
+    currentCharIndex: 0,
   });
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -130,6 +132,7 @@ export function useSpeechSynthesis() {
       totalChunks: 0,
       progress: 0,
       isTranslatingChunk: false,
+      currentCharIndex: 0,
     }));
   }, [getSynth]);
 
@@ -168,6 +171,7 @@ export function useSpeechSynthesis() {
           totalChunks: 0,
           progress: 100,
           isTranslatingChunk: false,
+          currentCharIndex: 0,
         }));
         return;
       }
@@ -180,6 +184,7 @@ export function useSpeechSynthesis() {
         currentChunk: index + 1,
         totalChunks: chunksRef.current.length,
         progress: Math.round((index / chunksRef.current.length) * 100),
+        currentCharIndex: 0,
       }));
 
       let textToSpeak = chunksRef.current[index];
@@ -298,6 +303,21 @@ export function useSpeechSynthesis() {
       utterance.onresume = () => {
         if (session !== sessionRef.current) return;
         setState((prev) => ({ ...prev, isPlaying: true, isPaused: false }));
+      };
+
+      utterance.onboundary = (event) => {
+        if (session !== sessionRef.current) return;
+        if (event.name === "word" || event.name === "sentence") {
+          const chunkProgress = event.charIndex / Math.max(1, textToSpeak.length);
+          const totalChunks = chunksRef.current.length;
+          const overallProgress = Math.round(((index + chunkProgress) / totalChunks) * 100);
+          
+          setState((prev) => ({ 
+            ...prev, 
+            currentCharIndex: event.charIndex,
+            progress: overallProgress 
+          }));
+        }
       };
 
       synth.speak(utterance);

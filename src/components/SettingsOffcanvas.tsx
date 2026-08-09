@@ -104,7 +104,7 @@ export function SettingsOffcanvas({
                 </button>
 
                 {/* Flyout menu */}
-                <div className="absolute top-full right-0 pt-2 opacity-0 -translate-y-2 pointer-events-none group-hover/provider:opacity-100 group-hover/provider:translate-y-0 group-hover/provider:pointer-events-auto transition-all duration-200 z-50 w-full">
+                <div className={cn("absolute top-full right-0 pt-2 opacity-0 -translate-y-2 pointer-events-none transition-all duration-200 z-50 w-full", !(isPlaying || isTranslating) && "group-hover/provider:opacity-100 group-hover/provider:translate-y-0 group-hover/provider:pointer-events-auto")}>
                   <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-hidden flex flex-col">
                     <button
                       onClick={() => setTranslationProvider("browser")}
@@ -150,9 +150,9 @@ export function SettingsOffcanvas({
                 </div>
                 <span className="text-sm font-bold text-rose-400 font-mono bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-500/20">{maxChunkSize}</span>
               </div>
-              <input id="s-chunk-size" type="range" min="50" max="500" step="25" value={maxChunkSize} onChange={handleChunkSizeChange} className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-rose-500 hover:accent-rose-400 transition-all" />
+              <input id="s-chunk-size" type="range" min="100" max="1000" step="100" disabled={isPlaying || isTranslating} value={maxChunkSize} onChange={handleChunkSizeChange} className={cn("w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-rose-500 hover:accent-rose-400 transition-all", (isPlaying || isTranslating) && "opacity-50 cursor-not-allowed")} />
               <div className="flex justify-between text-[11px] text-[var(--text-muted)] font-mono">
-                <span>50 ch</span><span>500 ch</span>
+                <span>100 ch</span><span>1000 ch</span>
               </div>
             </div>
           </section>

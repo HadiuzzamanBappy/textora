@@ -45,6 +45,7 @@ export default function Home() {
     currentChunk,
     isTranslatingChunk,
     isSupported,
+    currentCharIndex,
     speak,
     pause,
     resume,
@@ -415,6 +416,7 @@ export default function Home() {
             sourceLang={sourceLang}
             voiceLang={voiceLang}
             currentChunk={currentChunk}
+            currentCharIndex={currentCharIndex}
             maxChunkSize={maxChunkSize}
           />
 

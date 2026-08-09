@@ -15,6 +15,7 @@ interface DocumentReaderProps {
   translationEnabled: boolean;
   targetLang: string;
   currentChunk?: number;
+  currentCharIndex?: number;
   maxChunkSize?: number;
   sourceLang: string;
   voiceLang: string;
@@ -32,6 +33,7 @@ export function DocumentReader({
   sourceLang,
   voiceLang,
   currentChunk = 0,
+  currentCharIndex = 0,
   maxChunkSize = 200,
 }: DocumentReaderProps) {
   const [isDragging, setIsDragging] = useState(false);
@@ -180,19 +182,41 @@ export function DocumentReader({
 
         {isPlaying ? (
           <div className="w-full flex-1 min-h-[250px] max-h-[50vh] bg-transparent border-none p-2 text-lg leading-relaxed relative z-10 custom-scrollbar font-serif overflow-y-auto whitespace-pre-wrap">
-            {chunkText(sourceText, maxChunkSize).map((chunk, index) => (
-              <span
-                key={index}
-                className={cn(
-                  "transition-colors duration-300 rounded-[4px] px-0.5",
-                  index === currentChunk - 1
-                    ? "bg-rose-500/20 dark:bg-rose-500/30 text-rose-900 dark:text-rose-100 font-semibold shadow-[0_0_15px_rgba(99,102,241,0.2)]"
-                    : "text-[var(--text-primary)] opacity-80"
-                )}
-              >
-                {chunk}{" "}
-              </span>
-            ))}
+            {chunkText(sourceText, maxChunkSize).map((chunk, index) => {
+              const isSpeakingSource = !translationEnabled || !translatedText;
+              
+              if (index === currentChunk - 1) {
+                if (isSpeakingSource) {
+                  const idx = currentCharIndex || 0;
+                  const beforeWord = chunk.substring(0, idx);
+                  const rest = chunk.substring(idx);
+                  const match = rest.match(/^\S+/);
+                  const currentWord = match ? match[0] : "";
+                  const afterWord = rest.substring(currentWord.length);
+
+                  return (
+                    <span key={index} className="text-[var(--text-primary)] transition-colors duration-300">
+                      <span className="opacity-90">{beforeWord}</span>
+                      <span className="bg-rose-500/30 dark:bg-rose-500/40 text-rose-950 dark:text-rose-100 font-bold shadow-[0_0_15px_rgba(244,63,94,0.3)] rounded-[4px] px-0.5 mx-0.5 transition-all duration-150 inline-block">{currentWord}</span>
+                      <span className="opacity-90">{afterWord} </span>
+                    </span>
+                  );
+                } else {
+                  // Fallback to chunk highlight if speaking translated text
+                  return (
+                    <span key={index} className="transition-colors duration-300 rounded-[4px] px-0.5 bg-rose-500/20 dark:bg-rose-500/30 text-rose-900 dark:text-rose-100 font-semibold shadow-[0_0_15px_rgba(244,63,94,0.2)]">
+                      {chunk}{" "}
+                    </span>
+                  );
+                }
+              }
+
+              return (
+                <span key={index} className="text-[var(--text-primary)] opacity-60 transition-colors duration-300 px-0.5">
+                  {chunk}{" "}
+                </span>
+              );
+            })}
           </div>
         ) : (
           <textarea
@@ -246,19 +270,40 @@ export function DocumentReader({
           <div className="flex-1 flex flex-col relative z-10">
             {isPlaying ? (
               <div className="w-full flex-1 min-h-[250px] max-h-[50vh] overflow-y-auto bg-transparent border-none p-2 text-base leading-relaxed focus:outline-none custom-scrollbar italic opacity-90 whitespace-pre-wrap">
-                {chunkText(translatedText || "", maxChunkSize).map((chunk, index) => (
-                  <span
-                    key={index}
-                    className={cn(
-                      "transition-colors duration-300 rounded-[4px] px-0.5",
-                      index === currentChunk - 1
-                        ? "bg-orange-500/20 dark:bg-orange-500/30 text-orange-900 dark:text-orange-100 font-semibold shadow-[0_0_15px_rgba(168,85,247,0.2)]"
-                        : ""
-                    )}
-                  >
-                    {chunk}{" "}
-                  </span>
-                ))}
+                {chunkText(translatedText || "", maxChunkSize).map((chunk, index) => {
+                  const isSpeakingTranslated = translationEnabled && !!translatedText;
+                  
+                  if (index === currentChunk - 1) {
+                    if (isSpeakingTranslated) {
+                      const idx = currentCharIndex || 0;
+                      const beforeWord = chunk.substring(0, idx);
+                      const rest = chunk.substring(idx);
+                      const match = rest.match(/^\S+/);
+                      const currentWord = match ? match[0] : "";
+                      const afterWord = rest.substring(currentWord.length);
+
+                      return (
+                        <span key={index} className="text-[var(--text-primary)] transition-colors duration-300">
+                          <span className="opacity-90">{beforeWord}</span>
+                          <span className="bg-orange-500/30 dark:bg-orange-500/40 text-orange-950 dark:text-orange-100 font-bold shadow-[0_0_15px_rgba(249,115,22,0.3)] rounded-[4px] px-0.5 mx-0.5 transition-all duration-150 inline-block">{currentWord}</span>
+                          <span className="opacity-90">{afterWord} </span>
+                        </span>
+                      );
+                    } else {
+                      return (
+                        <span key={index} className="transition-colors duration-300 rounded-[4px] px-0.5 bg-orange-500/20 dark:bg-orange-500/30 text-orange-900 dark:text-orange-100 font-semibold shadow-[0_0_15px_rgba(249,115,22,0.2)]">
+                          {chunk}{" "}
+                        </span>
+                      );
+                    }
+                  }
+
+                  return (
+                    <span key={index} className="text-[var(--text-primary)] opacity-60 transition-colors duration-300 px-0.5">
+                      {chunk}{" "}
+                    </span>
+                  );
+                })}
               </div>
             ) : (
               <textarea
