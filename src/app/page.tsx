@@ -398,100 +398,85 @@ export default function Home() {
 
         </div>
 
-        {/* Settings Console split into Translation & Speech Settings */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          {/* Card A: Translation Engine Settings */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-4 flex flex-col justify-between">
-            <div>
-              <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase mb-4">
-                Translation Engine
-              </h3>
-              <div className="space-y-4">
-                {/* Provider Select */}
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="provider-select" className="text-xs font-bold text-[var(--text-secondary)]">
-                    Translation Method
-                  </label>
-                  <select
-                    id="provider-select"
-                    value={translationProvider}
-                    onChange={(e) => setTranslationProvider(e.target.value as "browser" | "google")}
-                    disabled={isPlaying || isTranslating}
-                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
-                  >
-                    <option value="browser">Free Web Translator (Keyless/Client)</option>
-                    <option value="google">Google Cloud API (Requires Key)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            {translationProvider === "google" && !process.env.NEXT_PUBLIC_GOOGLE_TRANSLATE_API_KEY && (
-              <div className="text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5">
-                <strong>Notice:</strong> Google Cloud API provider requires setting `GOOGLE_TRANSLATE_API_KEY` in environment variables.
-              </div>
-            )}
+        {/* Unified Settings Console */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-6">
+          <div className="border-b border-[var(--border-input)] pb-3">
+            <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
+              Configuration & Speech Settings
+            </h3>
           </div>
 
-          {/* Card B: Speech Settings (TTS) */}
-          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-6">
-            <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
-              Speech Synthesis (TTS)
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left Column: Dropdowns */}
-              <div className="space-y-4">
-                {/* Voice Language Select */}
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="voice-lang-select" className="text-xs font-bold text-[var(--text-secondary)]">
-                    Voice Language
-                  </label>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column: Dropdowns */}
+            <div className="space-y-4">
+              {/* Translation Provider Select */}
+              <div className="flex flex-col gap-2">
+                <label htmlFor="provider-select" className="text-xs font-bold text-[var(--text-secondary)]">
+                  Translation Method
+                </label>
+                <select
+                  id="provider-select"
+                  value={translationProvider}
+                  onChange={(e) => setTranslationProvider(e.target.value as "browser" | "google")}
+                  disabled={isPlaying || isTranslating}
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
+                >
+                  <option value="browser">Free Web Translator (Keyless/Client)</option>
+                  <option value="google">Google Cloud API (Requires Key)</option>
+                </select>
+              </div>
+
+              {/* Voice Language Select */}
+              <div className="flex flex-col gap-2">
+                <label htmlFor="voice-lang-select" className="text-xs font-bold text-[var(--text-secondary)]">
+                  Voice Language
+                </label>
+                <select
+                  id="voice-lang-select"
+                  value={voiceLang}
+                  onChange={(e) => setVoiceLang(e.target.value)}
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
+                >
+                  {voiceLanguages.map((code) => (
+                    <option key={code} value={code}>
+                      {getLanguageName(code)} ({code.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Voice Speaker Select */}
+              <div className="flex flex-col gap-2">
+                <label htmlFor="voice-select" className="text-xs font-bold text-[var(--text-secondary)]">
+                  Voice Speaker
+                </label>
+                {filteredVoices.length === 0 ? (
                   <select
-                    id="voice-lang-select"
-                    value={voiceLang}
-                    onChange={(e) => setVoiceLang(e.target.value)}
+                    id="voice-select"
+                    disabled
+                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-muted)] text-xs rounded-xl px-3 py-2.5 focus:outline-none opacity-50"
+                  >
+                    <option>No voices found</option>
+                  </select>
+                ) : (
+                  <select
+                    id="voice-select"
+                    value={selectedVoice?.name || ""}
+                    onChange={handleVoiceChange}
                     className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
                   >
-                    {voiceLanguages.map((code) => (
-                      <option key={code} value={code}>
-                        {getLanguageName(code)} ({code.toUpperCase()})
+                    {filteredVoices.map((voice) => (
+                      <option key={voice.name} value={voice.name}>
+                        {voice.name} ({voice.lang})
                       </option>
                     ))}
                   </select>
-                </div>
-
-                {/* Voice Speaker Select */}
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="voice-select" className="text-xs font-bold text-[var(--text-secondary)]">
-                    Voice Speaker
-                  </label>
-                  {filteredVoices.length === 0 ? (
-                    <select
-                      id="voice-select"
-                      disabled
-                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-muted)] text-xs rounded-xl px-3 py-2.5 focus:outline-none opacity-50"
-                    >
-                      <option>No voices found</option>
-                    </select>
-                  ) : (
-                    <select
-                      id="voice-select"
-                      value={selectedVoice?.name || ""}
-                      onChange={handleVoiceChange}
-                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
-                    >
-                      {filteredVoices.map((voice) => (
-                        <option key={voice.name} value={voice.name}>
-                          {voice.name} ({voice.lang})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
+                )}
               </div>
+            </div>
 
-              {/* Right Column: Sliders (each in its own row) */}
+            {/* Right Column: Sliders */}
+            <div className="space-y-4 flex flex-col justify-between">
               <div className="space-y-4">
                 {/* Row 1: Voice Speed */}
                 <div className="flex flex-col gap-2">
@@ -541,9 +526,14 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
+              {translationProvider === "google" && !process.env.NEXT_PUBLIC_GOOGLE_TRANSLATE_API_KEY && (
+                <div className="text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5">
+                  <strong>Notice:</strong> Google Cloud API provider requires setting `GOOGLE_TRANSLATE_API_KEY` in environment variables.
+                </div>
+              )}
             </div>
           </div>
-
         </div>
 
         {/* Global Pipeline controls and visualizer */}
