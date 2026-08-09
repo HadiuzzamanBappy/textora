@@ -24,6 +24,8 @@ export default function Home() {
 
   // Theme state setup
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  // Settings offcanvas open state
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -253,7 +255,20 @@ export default function Home() {
               Textora
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Settings Gear Button */}
+            <button
+              onClick={() => setSettingsOpen(true)}
+              aria-label="Open Settings"
+              className="p-2 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-indigo-500/60 transition-all cursor-pointer shadow-sm group"
+            >
+              <svg className="w-4 h-4 transition-transform duration-500 group-hover:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+
+            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               aria-label="Toggle Theme"
@@ -269,12 +284,163 @@ export default function Home() {
                 </svg>
               )}
             </button>
+
             <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
               PRO
             </span>
           </div>
         </div>
       </header>
+
+      {/* Settings Offcanvas Backdrop */}
+      {settingsOpen && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
+          onClick={() => setSettingsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Settings Offcanvas Panel */}
+      <aside
+        aria-label="Settings Panel"
+        className={`fixed top-0 right-0 z-[70] h-full w-full sm:w-[420px] bg-[var(--bg-card)] border-l border-[var(--border-card)] shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
+          settingsOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {/* Offcanvas Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-input)] shrink-0">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <h2 className="text-sm font-bold tracking-wider text-[var(--text-primary)] uppercase">Settings</h2>
+          </div>
+          <button
+            onClick={() => setSettingsOpen(false)}
+            aria-label="Close Settings"
+            className="p-1.5 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Offcanvas Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
+
+          {/* Section: Translation */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-input)]">
+              <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              <span className="text-[10px] font-bold tracking-widest text-[var(--text-secondary)] uppercase">Translation</span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="s-provider-select" className="text-xs font-bold text-[var(--text-secondary)]">Translation Method</label>
+              <select
+                id="s-provider-select"
+                value={translationProvider}
+                onChange={(e) => setTranslationProvider(e.target.value as "browser" | "google")}
+                disabled={isPlaying || isTranslating}
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
+              >
+                <option value="browser">Free Web Translator (Keyless/Client)</option>
+                <option value="google">Google Cloud API (Requires Key)</option>
+              </select>
+            </div>
+
+            {translationProvider === "google" && !process.env.NEXT_PUBLIC_GOOGLE_TRANSLATE_API_KEY && (
+              <div className="text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5">
+                <strong>Notice:</strong> Google Cloud API requires <code className="font-mono">GOOGLE_TRANSLATE_API_KEY</code> set in environment variables.
+              </div>
+            )}
+          </div>
+
+          {/* Section: Speech Synthesis */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-input)]">
+              <svg className="w-3.5 h-3.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+              <span className="text-[10px] font-bold tracking-widest text-[var(--text-secondary)] uppercase">Speech Synthesis</span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="s-voice-lang-select" className="text-xs font-bold text-[var(--text-secondary)]">Voice Language</label>
+              <select
+                id="s-voice-lang-select"
+                value={voiceLang}
+                onChange={(e) => setVoiceLang(e.target.value)}
+                className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
+              >
+                {voiceLanguages.map((code) => (
+                  <option key={code} value={code}>{getLanguageName(code)} ({code.toUpperCase()})</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label htmlFor="s-voice-select" className="text-xs font-bold text-[var(--text-secondary)]">Voice Speaker</label>
+              {filteredVoices.length === 0 ? (
+                <select id="s-voice-select" disabled className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-muted)] text-xs rounded-xl px-3 py-2.5 opacity-50">
+                  <option>No voices found for this language</option>
+                </select>
+              ) : (
+                <select
+                  id="s-voice-select"
+                  value={selectedVoice?.name || ""}
+                  onChange={handleVoiceChange}
+                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
+                >
+                  {filteredVoices.map((voice) => (
+                    <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang})</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Voice Speed Slider */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <label htmlFor="s-speech-rate" className="text-xs font-bold text-[var(--text-secondary)]">Voice Speed</label>
+                <span className="text-xs font-bold text-indigo-400 font-mono">{speechRate.toFixed(1)}x</span>
+              </div>
+              <input id="s-speech-rate" type="range" min="0.5" max="2.0" step="0.1" value={speechRate} onChange={handleRateChange} className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+              <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
+                <span>0.5x</span><span>2.0x</span>
+              </div>
+            </div>
+
+            {/* Text Segmentation Slider */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <label htmlFor="s-chunk-size" className="text-xs font-bold text-[var(--text-secondary)]">Text Segmentation</label>
+                <span className="text-xs font-bold text-indigo-400 font-mono">{maxChunkSize} chars</span>
+              </div>
+              <input id="s-chunk-size" type="range" min="50" max="500" step="25" value={maxChunkSize} onChange={handleChunkSizeChange} className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+              <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
+                <span>50 ch</span><span>500 ch</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Offcanvas Footer */}
+        <div className="px-6 py-4 border-t border-[var(--border-input)] shrink-0">
+          <button
+            onClick={() => setSettingsOpen(false)}
+            className="w-full py-2.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-xs font-semibold hover:bg-indigo-500/30 transition-all cursor-pointer"
+          >
+            Done
+          </button>
+        </div>
+      </aside>
 
       {/* Main Workspace */}
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
@@ -398,143 +564,7 @@ export default function Home() {
 
         </div>
 
-        {/* Unified Settings Console */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-6">
-          <div className="border-b border-[var(--border-input)] pb-3">
-            <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase">
-              Configuration & Speech Settings
-            </h3>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column: Dropdowns */}
-            <div className="space-y-4">
-              {/* Translation Provider Select */}
-              <div className="flex flex-col gap-2">
-                <label htmlFor="provider-select" className="text-xs font-bold text-[var(--text-secondary)]">
-                  Translation Method
-                </label>
-                <select
-                  id="provider-select"
-                  value={translationProvider}
-                  onChange={(e) => setTranslationProvider(e.target.value as "browser" | "google")}
-                  disabled={isPlaying || isTranslating}
-                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
-                >
-                  <option value="browser">Free Web Translator (Keyless/Client)</option>
-                  <option value="google">Google Cloud API (Requires Key)</option>
-                </select>
-              </div>
-
-              {/* Voice Language Select */}
-              <div className="flex flex-col gap-2">
-                <label htmlFor="voice-lang-select" className="text-xs font-bold text-[var(--text-secondary)]">
-                  Voice Language
-                </label>
-                <select
-                  id="voice-lang-select"
-                  value={voiceLang}
-                  onChange={(e) => setVoiceLang(e.target.value)}
-                  className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
-                >
-                  {voiceLanguages.map((code) => (
-                    <option key={code} value={code}>
-                      {getLanguageName(code)} ({code.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Voice Speaker Select */}
-              <div className="flex flex-col gap-2">
-                <label htmlFor="voice-select" className="text-xs font-bold text-[var(--text-secondary)]">
-                  Voice Speaker
-                </label>
-                {filteredVoices.length === 0 ? (
-                  <select
-                    id="voice-select"
-                    disabled
-                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-muted)] text-xs rounded-xl px-3 py-2.5 focus:outline-none opacity-50"
-                  >
-                    <option>No voices found</option>
-                  </select>
-                ) : (
-                  <select
-                    id="voice-select"
-                    value={selectedVoice?.name || ""}
-                    onChange={handleVoiceChange}
-                    className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
-                  >
-                    {filteredVoices.map((voice) => (
-                      <option key={voice.name} value={voice.name}>
-                        {voice.name} ({voice.lang})
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            </div>
-
-            {/* Right Column: Sliders */}
-            <div className="space-y-4 flex flex-col justify-between">
-              <div className="space-y-4">
-                {/* Row 1: Voice Speed */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center">
-                    <label htmlFor="speech-rate" className="text-xs font-bold text-[var(--text-secondary)] font-sans">
-                      Voice Speed
-                    </label>
-                    <span className="text-xs font-bold text-indigo-400 font-mono">{speechRate.toFixed(1)}x</span>
-                  </div>
-                  <input
-                    id="speech-rate"
-                    type="range"
-                    min="0.5"
-                    max="2.0"
-                    step="0.1"
-                    value={speechRate}
-                    onChange={handleRateChange}
-                    className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                  />
-                  <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
-                    <span>0.5x</span>
-                    <span>2.0x</span>
-                  </div>
-                </div>
-
-                {/* Row 2: Text Segmentation */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between items-center">
-                    <label htmlFor="chunk-size" className="text-xs font-bold text-[var(--text-secondary)]">
-                      Text Segmentation
-                    </label>
-                    <span className="text-xs font-bold text-indigo-400 font-mono">{maxChunkSize} chars</span>
-                  </div>
-                  <input
-                    id="chunk-size"
-                    type="range"
-                    min="50"
-                    max="500"
-                    step="25"
-                    value={maxChunkSize}
-                    onChange={handleChunkSizeChange}
-                    className="w-full h-2 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                  />
-                  <div className="flex justify-between text-[10px] text-[var(--text-muted)] font-mono">
-                    <span>50 ch</span>
-                    <span>500 ch</span>
-                  </div>
-                </div>
-              </div>
-
-              {translationProvider === "google" && !process.env.NEXT_PUBLIC_GOOGLE_TRANSLATE_API_KEY && (
-                <div className="text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5">
-                  <strong>Notice:</strong> Google Cloud API provider requires setting `GOOGLE_TRANSLATE_API_KEY` in environment variables.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
 
         {/* Global Pipeline controls and visualizer */}
         <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-4">
