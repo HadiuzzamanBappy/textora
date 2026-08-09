@@ -6,8 +6,9 @@ import { useSpeechSynthesis } from "../hooks/useSpeechSynthesis";
 
 export default function Home() {
   const [text, setText] = useState(
-    "Welcome to Textora. This is a premium text-to-speech engine running directly in your browser. Feel free to adjust the voice rate and choose different voices!"
+    "Welcome to Textora. This is a premium text-to-speech engine running directly in your browser. Feel free to adjust the voice rate, choose different voices, and set the text chunk size limit!\n\nThis application splits large text documents automatically so the browser doesn't block. It speaks each sentence sequentially, ensuring a smooth and natural listening experience."
   );
+  const [maxChunkSize, setMaxChunkSize] = useState(200);
 
   const {
     isPlaying,
@@ -15,6 +16,9 @@ export default function Home() {
     availableVoices,
     selectedVoice,
     speechRate,
+    currentChunk,
+    totalChunks,
+    progress,
     speak,
     pause,
     resume,
@@ -30,6 +34,10 @@ export default function Home() {
 
   const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRate(parseFloat(e.target.value));
+  };
+
+  const handleChunkSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMaxChunkSize(parseInt(e.target.value, 10));
   };
 
   return (
@@ -57,7 +65,7 @@ export default function Home() {
             </span>
           </div>
           <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400">
-            TTS Module Active
+            Sequential Queue Active
           </div>
         </div>
       </header>
@@ -81,36 +89,61 @@ export default function Home() {
         {/* Dashboard Card */}
         <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 md:p-8 backdrop-blur-md shadow-2xl space-y-6">
           
-          {/* Status Indicator */}
-          <div className="flex items-center justify-between bg-slate-950/40 border border-slate-900 rounded-xl px-4 py-3">
-            <div className="flex items-center gap-3">
-              <span className="relative flex h-3 w-3">
-                {isPlaying && !isPaused ? (
-                  <>
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
-                  </>
-                ) : isPaused ? (
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
-                ) : (
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-600"></span>
-                )}
-              </span>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                Status:{" "}
-                <span className={isPlaying && !isPaused ? "text-indigo-400" : isPaused ? "text-amber-400" : "text-slate-400"}>
-                  {isPlaying && !isPaused ? "Speaking" : isPaused ? "Paused" : "Idle"}
+          {/* Status & Progress Indicators */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between bg-slate-950/40 border border-slate-900 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span className="relative flex h-3 w-3">
+                  {isPlaying && !isPaused ? (
+                    <>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                    </>
+                  ) : isPaused ? (
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                  ) : (
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-600"></span>
+                  )}
                 </span>
-              </span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                  Status:{" "}
+                  <span className={isPlaying && !isPaused ? "text-indigo-400" : isPaused ? "text-amber-400" : "text-slate-400"}>
+                    {isPlaying && !isPaused ? "Speaking" : isPaused ? "Paused" : "Idle"}
+                  </span>
+                </span>
+              </div>
+              
+              {/* Display current chunk tracking if speaking */}
+              {isPlaying && totalChunks > 0 && (
+                <span className="text-xs font-medium text-slate-400 bg-slate-800 px-2.5 py-1 rounded-lg">
+                  Chunk {currentChunk} / {totalChunks}
+                </span>
+              )}
+              
+              {/* Visualizer bars when playing */}
+              {isPlaying && !isPaused && (
+                <div className="flex gap-0.5 items-end h-4">
+                  <span className="w-0.5 h-2 bg-indigo-400 animate-[bounce_0.8s_infinite_100ms]" />
+                  <span className="w-0.5 h-4 bg-indigo-400 animate-[bounce_0.8s_infinite_300ms]" />
+                  <span className="w-0.5 h-3 bg-indigo-400 animate-[bounce_0.8s_infinite_200ms]" />
+                  <span className="w-0.5 h-1 bg-indigo-400 animate-[bounce_0.8s_infinite_400ms]" />
+                </div>
+              )}
             </div>
-            
-            {/* Visualizer bars when playing */}
-            {isPlaying && !isPaused && (
-              <div className="flex gap-0.5 items-end h-4">
-                <span className="w-0.5 h-2 bg-indigo-400 animate-[bounce_0.8s_infinite_100ms]" />
-                <span className="w-0.5 h-4 bg-indigo-400 animate-[bounce_0.8s_infinite_300ms]" />
-                <span className="w-0.5 h-3 bg-indigo-400 animate-[bounce_0.8s_infinite_200ms]" />
-                <span className="w-0.5 h-1 bg-indigo-400 animate-[bounce_0.8s_infinite_400ms]" />
+
+            {/* Progress Bar (Visible during playback or when completion is registered) */}
+            {(isPlaying || progress > 0) && (
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-slate-400">
+                  <span>Playback Progress</span>
+                  <span>{progress}%</span>
+                </div>
+                <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-300 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -128,9 +161,9 @@ export default function Home() {
           </div>
 
           {/* Controls Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
             
-            {/* Left Controls: Voice list */}
+            {/* Control 1: Voice list */}
             <div className="flex flex-col gap-2">
               <label htmlFor="voice-select" className="text-xs font-bold tracking-wider text-slate-400 uppercase">Select Voice</label>
               {availableVoices.length === 0 ? (
@@ -153,7 +186,7 @@ export default function Home() {
               )}
             </div>
 
-            {/* Right Controls: Speed Rate */}
+            {/* Control 2: Speed Rate */}
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <label htmlFor="speech-rate" className="text-xs font-bold tracking-wider text-slate-400 uppercase">Speed Rate</label>
@@ -176,12 +209,34 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Control 3: Chunk Size Config */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <label htmlFor="chunk-size" className="text-xs font-bold tracking-wider text-slate-400 uppercase">Max Chunk Size</label>
+                <span className="text-xs font-bold text-indigo-400">{maxChunkSize} chars</span>
+              </div>
+              <input
+                id="chunk-size"
+                type="range"
+                min="50"
+                max="500"
+                step="25"
+                value={maxChunkSize}
+                onChange={handleChunkSizeChange}
+                className="w-full h-2 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              />
+              <div className="flex justify-between text-[10px] text-slate-500">
+                <span>50 (Short sentences)</span>
+                <span>500 (Long paragraphs)</span>
+              </div>
+            </div>
+
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3 justify-center pt-4 border-t border-slate-850">
             <button
-              onClick={() => speak(text)}
+              onClick={() => speak(text, maxChunkSize)}
               disabled={!text.trim()}
               className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
             >
@@ -236,6 +291,3 @@ export default function Home() {
     </main>
   );
 }
-
-
-

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { chunkText } from "../utils/textChunker";
 
 export interface SpeechSynthesisState {
   isPlaying: boolean;
@@ -8,6 +9,9 @@ export interface SpeechSynthesisState {
   availableVoices: SpeechSynthesisVoice[];
   selectedVoice: SpeechSynthesisVoice | null;
   speechRate: number;
+  currentChunk: number; // 1-based index
+  totalChunks: number;
+  progress: number; // 0 to 100
 }
 
 export function useSpeechSynthesis() {
@@ -17,9 +21,16 @@ export function useSpeechSynthesis() {
     availableVoices: [],
     selectedVoice: null,
     speechRate: 1,
+    currentChunk: 0,
+    totalChunks: 0,
+    progress: 0,
   });
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const sessionRef = useRef<number>(0);
+  const chunksRef = useRef<string[]>([]);
+  const currentIndexRef = useRef<number>(0);
+  const playChunkRef = useRef<(index: number, session: number) => void>(() => {});
 
   // Helper to safely fetch window.speechSynthesis
   const getSynth = useCallback(() => {
@@ -82,16 +93,31 @@ export function useSpeechSynthesis() {
       } else {
         synth.onvoiceschanged = null;
       }
-      // Stop speech on unmount to clean up resources
+      // Cancel speech on unmount
       synth.cancel();
     };
   }, [getSynth, loadVoices]);
 
   const stop = useCallback(() => {
     const synth = getSynth();
-    if (!synth) return;
-    synth.cancel();
-    setState((prev) => ({ ...prev, isPlaying: false, isPaused: false }));
+    sessionRef.current++; // Invalidate active async callbacks
+    
+    if (synth) {
+      synth.cancel();
+    }
+    
+    chunksRef.current = [];
+    currentIndexRef.current = 0;
+    utteranceRef.current = null;
+
+    setState((prev) => ({
+      ...prev,
+      isPlaying: false,
+      isPaused: false,
+      currentChunk: 0,
+      totalChunks: 0,
+      progress: 0,
+    }));
   }, [getSynth]);
 
   const pause = useCallback(() => {
@@ -108,14 +134,41 @@ export function useSpeechSynthesis() {
     setState((prev) => ({ ...prev, isPaused: false, isPlaying: true }));
   }, [getSynth]);
 
-  const speak = useCallback(
-    (text: string) => {
+  // Plays a single chunk from chunksRef.current at specified index
+  const playChunk = useCallback(
+    (index: number, session: number) => {
       const synth = getSynth();
-      if (!synth || !text.trim()) return;
+      if (!synth) return;
 
-      synth.cancel();
+      // Invalidate if a newer speech session was started or stopped
+      if (session !== sessionRef.current) return;
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      // Completed all chunks
+      if (index >= chunksRef.current.length) {
+        setState((prev) => ({
+          ...prev,
+          isPlaying: false,
+          isPaused: false,
+          currentChunk: 0,
+          totalChunks: 0,
+          progress: 100,
+        }));
+        return;
+      }
+
+      // Update tracking states for the current chunk
+      setState((prev) => ({
+        ...prev,
+        isPlaying: true,
+        isPaused: false,
+        currentChunk: index + 1,
+        totalChunks: chunksRef.current.length,
+        progress: Math.round((index / chunksRef.current.length) * 100),
+      }));
+
+      // Create new synthesis utterance
+      const textToSpeak = chunksRef.current[index];
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utteranceRef.current = utterance;
 
       if (state.selectedVoice) {
@@ -123,34 +176,70 @@ export function useSpeechSynthesis() {
       }
       utterance.rate = state.speechRate;
 
-      utterance.onstart = () => {
-        setState((prev) => ({ ...prev, isPlaying: true, isPaused: false }));
-      };
-
       utterance.onend = () => {
-        setState((prev) => ({ ...prev, isPlaying: false, isPaused: false }));
-        utteranceRef.current = null;
+        if (session !== sessionRef.current) return;
+        currentIndexRef.current = index + 1;
+        playChunkRef.current(currentIndexRef.current, session);
       };
 
       utterance.onerror = (event) => {
+        if (session !== sessionRef.current) return;
+        
+        // Log non-user cancelled errors
         if (event.error !== "interrupted") {
-          console.error("SpeechSynthesisUtterance error:", event);
+          console.error(`SpeechSynthesis error on chunk ${index}:`, event);
         }
-        setState((prev) => ({ ...prev, isPlaying: false, isPaused: false }));
-        utteranceRef.current = null;
+
+        // Gracefully recover: move to next chunk
+        currentIndexRef.current = index + 1;
+        playChunkRef.current(currentIndexRef.current, session);
       };
 
       utterance.onpause = () => {
+        if (session !== sessionRef.current) return;
         setState((prev) => ({ ...prev, isPaused: true }));
       };
 
       utterance.onresume = () => {
+        if (session !== sessionRef.current) return;
         setState((prev) => ({ ...prev, isPlaying: true, isPaused: false }));
       };
 
       synth.speak(utterance);
     },
     [getSynth, state.selectedVoice, state.speechRate]
+  );
+
+  // Keep recursive function pointer reference updated to avoid ESLint early variable access issues
+  useEffect(() => {
+    playChunkRef.current = playChunk;
+  }, [playChunk]);
+
+  const speak = useCallback(
+    (text: string, maxChunkSize: number = 200) => {
+      const synth = getSynth();
+      if (!synth || !text.trim()) return;
+
+      // Invalidate previous session
+      sessionRef.current++;
+      const currentSession = sessionRef.current;
+
+      synth.cancel();
+
+      // Chunk the text using the chunkText utility
+      const chunks = chunkText(text, maxChunkSize);
+      chunksRef.current = chunks;
+      currentIndexRef.current = 0;
+
+      if (chunks.length === 0) {
+        stop();
+        return;
+      }
+
+      // Begin playing first chunk in queue
+      playChunk(0, currentSession);
+    },
+    [getSynth, playChunk, stop]
   );
 
   const setVoice = useCallback((voice: SpeechSynthesisVoice | null) => {
