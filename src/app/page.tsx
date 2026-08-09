@@ -54,6 +54,11 @@ export default function Home() {
   const handleTranslate = async () => {
     if (!sourceText.trim()) return;
 
+    if (sourceText.length > 5000) {
+      setTranslationError("Full document static translation is limited to 5,000 characters. For larger documents, please use the 'Translate & Speak Pipeline' below, which translates progressively chunk-by-chunk.");
+      return;
+    }
+
     setIsTranslating(true);
     setTranslationError(null);
 
@@ -83,6 +88,19 @@ export default function Home() {
     } finally {
       setIsTranslating(false);
     }
+  };
+
+  // Progressive Speak Pipeline Trigger with size limits validation
+  const handleSpeakPipeline = () => {
+    if (!sourceText.trim()) return;
+
+    if (sourceText.length > 50000) {
+      setTranslationError("The progressive translation pipeline is limited to 50,000 characters to ensure browser tab stability. Please shorten your document.");
+      return;
+    }
+
+    setTranslationError(null);
+    speak(sourceText, maxChunkSize, sourceLang, targetLang);
   };
 
   // Clear all states, inputs, and stop active speech playback
@@ -374,7 +392,7 @@ export default function Home() {
             
             {/* Primary combined Translate & Speak action */}
             <button
-              onClick={() => speak(sourceText, maxChunkSize, sourceLang, targetLang)}
+              onClick={handleSpeakPipeline}
               disabled={!sourceText.trim() || isTranslating}
               className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] text-sm"
             >
