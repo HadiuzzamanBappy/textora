@@ -12,6 +12,7 @@ export default function Home() {
   const [sourceLang, setSourceLang] = useState("en");
   const [targetLang, setTargetLang] = useState("es");
   const [translatedText, setTranslatedText] = useState("");
+  const [voiceLang, setVoiceLang] = useState("es");
 
   // Background/API state
   const [isTranslating, setIsTranslating] = useState(false);
@@ -65,6 +66,57 @@ export default function Home() {
     setVoice,
     setRate,
   } = useSpeechSynthesis();
+
+  // Get all unique voice languages from browser
+  const voiceLanguages = React.useMemo(() => {
+    const langs = new Set<string>();
+    availableVoices.forEach((v) => {
+      const primary = v.lang.split("-")[0].split("_")[0].toLowerCase();
+      langs.add(primary);
+    });
+    return Array.from(langs).sort();
+  }, [availableVoices]);
+
+  // Filter voices based on selected voiceLang prefix
+  const filteredVoices = React.useMemo(() => {
+    return availableVoices.filter((v) => {
+      const primary = v.lang.split("-")[0].split("_")[0].toLowerCase();
+      return primary === voiceLang.toLowerCase();
+    });
+  }, [availableVoices, voiceLang]);
+
+  // Automatically select a matching voice if current one belongs to a different language
+  React.useEffect(() => {
+    if (filteredVoices.length > 0) {
+      const currentPrimary = selectedVoice?.lang.split("-")[0].split("_")[0].toLowerCase();
+      if (currentPrimary !== voiceLang.toLowerCase()) {
+        setVoice(filteredVoices[0]);
+      }
+    }
+  }, [filteredVoices, voiceLang, selectedVoice, setVoice]);
+
+  const getLanguageName = (code: string) => {
+    const map: Record<string, string> = {
+      en: "English",
+      es: "Spanish",
+      fr: "French",
+      de: "German",
+      zh: "Chinese",
+      ja: "Japanese",
+      pt: "Portuguese",
+      it: "Italian",
+      ru: "Russian",
+      ko: "Korean",
+      hi: "Hindi",
+      bn: "Bengali",
+      ar: "Arabic",
+      nl: "Dutch",
+      pl: "Polish",
+      tr: "Turkish",
+      vi: "Vietnamese",
+    };
+    return map[code.toLowerCase()] || code.toUpperCase();
+  };
 
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = availableVoices.find((v) => v.name === e.target.value) || null;
@@ -247,6 +299,18 @@ export default function Home() {
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                 Source Document
               </span>
+              <select
+                aria-label="Source Language Selector"
+                value={sourceLang}
+                onChange={(e) => setSourceLang(e.target.value)}
+                disabled={isPlaying || isTranslating}
+                className="bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-secondary)] text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
+              >
+                <option value="en">English (US)</option>
+                <option value="es">Spanish (ES)</option>
+                <option value="fr">French (FR)</option>
+                <option value="de">German (DE)</option>
+              </select>
             </div>
 
             <textarea
@@ -301,6 +365,21 @@ export default function Home() {
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                 Translation Output
               </span>
+              <select
+                aria-label="Target Language Selector"
+                value={targetLang}
+                onChange={(e) => {
+                  setTargetLang(e.target.value);
+                  setVoiceLang(e.target.value);
+                }}
+                disabled={isPlaying || isTranslating}
+                className="bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-secondary)] text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
+              >
+                <option value="es">Spanish (ES)</option>
+                <option value="en">English (US)</option>
+                <option value="fr">French (FR)</option>
+                <option value="de">German (DE)</option>
+              </select>
             </div>
 
             <textarea
@@ -322,17 +401,17 @@ export default function Home() {
         {/* Settings Console split into Translation & Speech Settings */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Card A: Translation Settings */}
+          {/* Card A: Translation Engine Settings */}
           <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 shadow-2xl space-y-4 flex flex-col justify-between">
             <div>
               <h3 className="text-xs font-bold tracking-wider text-[var(--text-secondary)] uppercase mb-4">
-                Translation Settings
+                Translation Engine
               </h3>
               <div className="space-y-4">
                 {/* Provider Select */}
                 <div className="flex flex-col gap-2">
                   <label htmlFor="provider-select" className="text-xs font-bold text-[var(--text-secondary)]">
-                    Translation Provider
+                    Translation Method
                   </label>
                   <select
                     id="provider-select"
@@ -344,45 +423,6 @@ export default function Home() {
                     <option value="browser">Free Web Translator (Keyless/Client)</option>
                     <option value="google">Google Cloud API (Requires Key)</option>
                   </select>
-                </div>
-
-                {/* Source and Target Languages */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="source-lang-select" className="text-xs font-bold text-[var(--text-secondary)]">
-                      Source Language
-                    </label>
-                    <select
-                      id="source-lang-select"
-                      value={sourceLang}
-                      onChange={(e) => setSourceLang(e.target.value)}
-                      disabled={isPlaying || isTranslating}
-                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
-                    >
-                      <option value="en">English (US)</option>
-                      <option value="es">Spanish (ES)</option>
-                      <option value="fr">French (FR)</option>
-                      <option value="de">German (DE)</option>
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor="target-lang-select" className="text-xs font-bold text-[var(--text-secondary)]">
-                      Target Language
-                    </label>
-                    <select
-                      id="target-lang-select"
-                      value={targetLang}
-                      onChange={(e) => setTargetLang(e.target.value)}
-                      disabled={isPlaying || isTranslating}
-                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
-                    >
-                      <option value="es">Spanish (ES)</option>
-                      <option value="en">English (US)</option>
-                      <option value="fr">French (FR)</option>
-                      <option value="de">German (DE)</option>
-                    </select>
-                  </div>
                 </div>
               </div>
             </div>
@@ -400,29 +440,55 @@ export default function Home() {
             </h3>
             
             <div className="space-y-4">
-              {/* Speaker Voice */}
-              <div className="flex flex-col gap-2">
-                <label htmlFor="voice-select" className="text-xs font-bold text-[var(--text-secondary)]">
-                  Speaker Voice
-                </label>
-                {availableVoices.length === 0 ? (
-                  <div className="text-xs text-[var(--text-muted)] bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl px-3 py-2">
-                    No system voices available.
-                  </div>
-                ) : (
+              {/* Divided Speech options: Voice Language & Voice Speaker */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Voice Language (Dependent Trigger) */}
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="voice-lang-select" className="text-xs font-bold text-[var(--text-secondary)]">
+                    Voice Language
+                  </label>
                   <select
-                    id="voice-select"
-                    value={selectedVoice?.name || ""}
-                    onChange={handleVoiceChange}
+                    id="voice-lang-select"
+                    value={voiceLang}
+                    onChange={(e) => setVoiceLang(e.target.value)}
                     className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
                   >
-                    {availableVoices.map((voice) => (
-                      <option key={voice.name} value={voice.name}>
-                        {voice.name} ({voice.lang})
+                    {voiceLanguages.map((code) => (
+                      <option key={code} value={code}>
+                        {getLanguageName(code)} ({code.toUpperCase()})
                       </option>
                     ))}
                   </select>
-                )}
+                </div>
+
+                {/* Voice Speaker (Filtered dynamically based on chosen Language) */}
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="voice-select" className="text-xs font-bold text-[var(--text-secondary)]">
+                    Voice Speaker
+                  </label>
+                  {filteredVoices.length === 0 ? (
+                    <select
+                      id="voice-select"
+                      disabled
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-muted)] text-xs rounded-xl px-3 py-2.5 focus:outline-none opacity-50"
+                    >
+                      <option>No voices found</option>
+                    </select>
+                  ) : (
+                    <select
+                      id="voice-select"
+                      value={selectedVoice?.name || ""}
+                      onChange={handleVoiceChange}
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
+                    >
+                      {filteredVoices.map((voice) => (
+                        <option key={voice.name} value={voice.name}>
+                          {voice.name} ({voice.lang})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               </div>
 
               {/* Speech Speed and Segmentation */}
