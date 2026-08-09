@@ -16,6 +16,8 @@ interface DocumentReaderProps {
   targetLang: string;
   currentChunk?: number;
   maxChunkSize?: number;
+  sourceLang: string;
+  voiceLang: string;
 }
 
 export function DocumentReader({
@@ -27,6 +29,8 @@ export function DocumentReader({
   handleClear,
   translationEnabled,
   targetLang,
+  sourceLang,
+  voiceLang,
   currentChunk = 0,
   maxChunkSize = 200,
 }: DocumentReaderProps) {
@@ -201,10 +205,26 @@ export function DocumentReader({
           />
         )}
 
-        <div className="flex items-center justify-end border-t border-[var(--border-input)] pt-3 relative z-10">
-          <span className="text-xs text-[var(--text-muted)] font-mono bg-[var(--bg-input)] px-2.5 py-1 rounded-md border border-[var(--border-input)] shadow-sm">
-            {sourceText.length.toLocaleString()} chars
-          </span>
+        <div className="flex flex-wrap items-center justify-between border-t border-[var(--border-input)] pt-3 relative z-10 gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
+              {sourceLang === "auto" 
+                ? `Detected: ${SUPPORTED_LANGUAGES.find((l) => l.code === voiceLang)?.name || voiceLang}`
+                : SUPPORTED_LANGUAGES.find((l) => l.code === sourceLang)?.name || sourceLang}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
+              {sourceText.trim() ? sourceText.trim().split(/\s+/).length.toLocaleString() : 0} words
+            </span>
+            <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
+              ~{Math.max(1, Math.ceil((sourceText.trim() ? sourceText.trim().split(/\s+/).length : 0) / 150))} min read
+            </span>
+            <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
+              {sourceText.length.toLocaleString()} chars
+            </span>
+          </div>
         </div>
       </div>
 

@@ -368,7 +368,7 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
-      <main className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-rose-500/30 selection:text-rose-200 relative transition-colors duration-500">
+      <main className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-rose-200 selection:text-rose-900 dark:selection:bg-rose-900 dark:selection:text-rose-100 relative transition-colors duration-500">
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
           <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-rose-500/10 blur-[150px] mix-blend-screen" />
           <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-orange-500/10 blur-[150px] mix-blend-screen" />
@@ -410,10 +410,13 @@ export default function Home() {
             translatedText={translatedText}
             isPlaying={isPlaying}
             isTranslating={isTranslating}
-            currentChunk={currentChunk}
             handleClear={handleClear}
             translationEnabled={translationEnabled}
             targetLang={targetLang}
+            sourceLang={sourceLang}
+            voiceLang={voiceLang}
+            currentChunk={currentChunk}
+            maxChunkSize={maxChunkSize}
           />
 
           <details className="group bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 max-w-4xl mx-auto w-full overflow-hidden">

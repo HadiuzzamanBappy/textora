@@ -78,7 +78,7 @@ export function SettingsOffcanvas({
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-8 scrollbar-thin scrollbar-thumb-[var(--border-input)] scrollbar-track-transparent">
 
           <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4">
-            <p className="text-xs text-rose-800 dark:text-rose-300/80 leading-relaxed font-medium dark:font-normal">
+            <p className="text-xs text-rose-950 dark:text-rose-200 leading-relaxed font-semibold dark:font-normal">
               These settings control the underlying engine. Voice selection and speed can now be found on the main player bar at the bottom of your screen.
             </p>
           </div>

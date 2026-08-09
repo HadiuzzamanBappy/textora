@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@custom-variant dark (&:is(.dark *));
 :root {
   --bg-main: #181a1b;
   --bg-card: rgba(30, 32, 34, 0.7);
