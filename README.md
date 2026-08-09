@@ -35,12 +35,11 @@ To run Textora locally:
 
 ## 2. Environment Variables
 
-Textora supports three translation providers configured server-side.
+Textora supports two translation providers configured server-side.
 
 | Key | Supported Values | Description |
 | :--- | :--- | :--- |
-| `TRANSLATION_PROVIDER` | `mock` \| `deepl` \| `google` | Selects active translation service. (Default is `mock`). |
-| `DEEPL_API_KEY` | `your_deepl_api_key` | Required only if `TRANSLATION_PROVIDER=deepl`. |
+| `TRANSLATION_PROVIDER` | `mock` \| `google` | Selects active translation service. (Default is `mock`). |
 | `GOOGLE_TRANSLATE_API_KEY` | `your_google_api_key` | Required only if `TRANSLATION_PROVIDER=google`. |
 
 ---
@@ -56,8 +55,8 @@ Textora is fully compatible with Vercel's Serverless execution model.
    - Import your repository.
 3. **Set Environment Variables**:
    - Under the **Environment Variables** accordion during project setup, add:
-     - `TRANSLATION_PROVIDER` = `google` or `deepl`
-     - `GOOGLE_TRANSLATE_API_KEY` or `DEEPL_API_KEY` = *[Your Secret Key]*
+     - `TRANSLATION_PROVIDER` = `google`
+     - `GOOGLE_TRANSLATE_API_KEY` = *[Your Secret Key]*
 4. **Deploy**: Click **Deploy**. Vercel will build the frontend, deploy serverless functions, and generate PWA manifest routes statically.
 
 ---

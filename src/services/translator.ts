@@ -49,53 +49,7 @@ export class MockTranslator implements Translator {
   }
 }
 
-// 2. DeepL Translation REST Engine
-export class DeepLTranslator implements Translator {
-  private apiKey: string;
-
-  constructor(apiKey: string) {
-    if (!apiKey) throw new Error("DeepL API Key is missing.");
-    this.apiKey = apiKey;
-  }
-
-  async translate(
-    text: string,
-    sourceLanguage: string,
-    targetLanguage: string
-  ): Promise<string> {
-    const isFreeAccount = this.apiKey.endsWith(":fx");
-    const baseUrl = isFreeAccount
-      ? "https://api-free.deepl.com/v2/translate"
-      : "https://api.deepl.com/v2/translate";
-
-    const response = await fetch(baseUrl, {
-      method: "POST",
-      headers: {
-        "Authorization": `DeepL-Auth-Key ${this.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: [text],
-        target_lang: targetLanguage.toUpperCase(),
-        source_lang: sourceLanguage.toUpperCase(),
-      }),
-    });
-
-    if (!response.ok) {
-      const errorDetail = await response.text();
-      throw new Error(`DeepL API failed with status ${response.status}: ${errorDetail}`);
-    }
-
-    const data = await response.json();
-    if (!data.translations || !data.translations[0]?.text) {
-      throw new Error("Malformed response received from DeepL API.");
-    }
-
-    return data.translations[0].text;
-  }
-}
-
-// 3. Google Translate REST Engine
+// 2. Google Translate REST Engine
 export class GoogleTranslator implements Translator {
   private apiKey: string;
 
@@ -142,14 +96,6 @@ export function getTranslator(): Translator {
   const provider = process.env.TRANSLATION_PROVIDER || "mock";
 
   switch (provider.toLowerCase()) {
-    case "deepl": {
-      const apiKey = process.env.DEEPL_API_KEY;
-      if (!apiKey) {
-        console.warn("DEEPL_API_KEY environment variable is not defined. Falling back to MockTranslator.");
-        return new MockTranslator();
-      }
-      return new DeepLTranslator(apiKey);
-    }
     case "google": {
       const apiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
       if (!apiKey) {
