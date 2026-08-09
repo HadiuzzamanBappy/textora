@@ -34,6 +34,8 @@ export function useSpeechSynthesis() {
   const sessionRef = useRef<number>(0);
   const chunksRef = useRef<string[]>([]);
   const currentIndexRef = useRef<number>(0);
+  const keepAliveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const iosUnlockedRef = useRef<boolean>(false);
   const playChunkRef = useRef<(index: number, session: number, sourceLang?: string, targetLang?: string, provider?: string) => void>(() => {});
 
   // Helper to safely fetch window.speechSynthesis
@@ -111,6 +113,7 @@ export function useSpeechSynthesis() {
     const synth = getSynth();
     sessionRef.current++; // Invalidate active async callbacks
     
+    if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
     if (synth) {
       synth.cancel();
     }
@@ -133,6 +136,7 @@ export function useSpeechSynthesis() {
   const pause = useCallback(() => {
     const synth = getSynth();
     if (!synth) return;
+    if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
     synth.pause();
     setState((prev) => ({ ...prev, isPaused: true }));
   }, [getSynth]);
@@ -155,6 +159,7 @@ export function useSpeechSynthesis() {
 
       // Completed all chunks
       if (index >= chunksRef.current.length) {
+        if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
         setState((prev) => ({
           ...prev,
           isPlaying: false,
@@ -250,6 +255,15 @@ export function useSpeechSynthesis() {
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utteranceRef.current = utterance;
 
+      // Chrome 14s bug workaround: pause and resume every 10s to keep it alive
+      if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
+      keepAliveTimerRef.current = setInterval(() => {
+        if (synth && synth.speaking) {
+          synth.pause();
+          synth.resume();
+        }
+      }, 10000);
+
       if (state.selectedVoice) {
         utterance.voice = state.selectedVoice;
       }
@@ -257,12 +271,14 @@ export function useSpeechSynthesis() {
 
       utterance.onend = () => {
         if (session !== sessionRef.current) return;
+        if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
         currentIndexRef.current = index + 1;
         playChunkRef.current(currentIndexRef.current, session, sourceLang, targetLang, provider);
       };
 
       utterance.onerror = (event) => {
         if (session !== sessionRef.current) return;
+        if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
         
         // Log non-user cancelled errors
         if (event.error !== "interrupted") {
@@ -303,7 +319,16 @@ export function useSpeechSynthesis() {
       sessionRef.current++;
       const currentSession = sessionRef.current;
 
+      // iOS Safari Audio Unlock: Must call speak synchronously on user interaction
+      if (!iosUnlockedRef.current) {
+        const unlockUtterance = new SpeechSynthesisUtterance("");
+        unlockUtterance.volume = 0;
+        synth.speak(unlockUtterance);
+        iosUnlockedRef.current = true;
+      }
+
       synth.cancel();
+      if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
 
       // Chunk the text using the chunkText utility
       const chunks = chunkText(text, maxChunkSize);

@@ -76,10 +76,16 @@ export function chunkText(text: string, maxSize: number = 200): string[] {
       continue;
     }
 
-    // 2. Split oversized paragraph by sentences
-    // Unicode sentence markers handled: English/European (.!?), Bengali/Hindi danda (।).
-    // Using a positive lookbehind to split right after sentence terminators.
-    const sentences = cleanPara.split(/(?<=[.!?।])\s+/);
+    // 2. Split oversized paragraph by sentences using native Intl.Segmenter
+    let sentences: string[] = [];
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+      const segmenter = new Intl.Segmenter(undefined, { granularity: 'sentence' });
+      sentences = Array.from(segmenter.segment(cleanPara)).map(s => s.segment);
+    } else {
+      // Fallback regex for older browsers (Firefox < 125)
+      sentences = cleanPara.split(/(?<=[.!?।])\s+/);
+    }
+    
     let currentSentenceGroup = "";
 
     for (const sentence of sentences) {

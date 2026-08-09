@@ -3,6 +3,7 @@ import { Trash2, Type, Languages, ChevronDown, ChevronUp, Upload, FileText } fro
 import { cn } from "../utils/cn";
 import { toast } from "sonner";
 import { SUPPORTED_LANGUAGES } from "../utils/languages";
+import { chunkText } from "../utils/textChunker";
 
 interface DocumentReaderProps {
   sourceText: string;
@@ -15,6 +16,8 @@ interface DocumentReaderProps {
   setShowTranscript: (show: boolean) => void;
   translationEnabled: boolean;
   targetLang: string;
+  currentChunk?: number;
+  maxChunkSize?: number;
 }
 
 export function DocumentReader({
@@ -28,6 +31,8 @@ export function DocumentReader({
   setShowTranscript,
   translationEnabled,
   targetLang,
+  currentChunk = 0,
+  maxChunkSize = 200,
 }: DocumentReaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -167,14 +172,32 @@ export function DocumentReader({
           </div>
         </div>
 
-        <textarea
-          aria-label="Document Text"
-          value={sourceText}
-          onChange={(e) => setSourceText(e.target.value)}
-          disabled={isPlaying || isTranslating}
-          className="w-full flex-1 min-h-[250px] max-h-[50vh] bg-transparent border-none p-2 text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-0 resize-y text-lg leading-relaxed disabled:opacity-60 relative z-10 custom-scrollbar font-serif"
-          placeholder="Paste your text here to begin reading..."
-        />
+        {isPlaying ? (
+          <div className="w-full flex-1 min-h-[250px] max-h-[50vh] bg-transparent border-none p-2 text-lg leading-relaxed relative z-10 custom-scrollbar font-serif overflow-y-auto whitespace-pre-wrap">
+            {chunkText(sourceText, maxChunkSize).map((chunk, index) => (
+              <span
+                key={index}
+                className={cn(
+                  "transition-colors duration-300 rounded-[4px] px-0.5",
+                  index === currentChunk - 1 
+                    ? "bg-indigo-500/30 text-indigo-100 font-medium shadow-[0_0_15px_rgba(99,102,241,0.2)]" 
+                    : "text-[var(--text-primary)] opacity-80"
+                )}
+              >
+                {chunk}{" "}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <textarea
+            aria-label="Document Text"
+            value={sourceText}
+            onChange={(e) => setSourceText(e.target.value)}
+            disabled={isPlaying || isTranslating}
+            className="w-full flex-1 min-h-[250px] max-h-[50vh] bg-transparent border-none p-2 text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-0 resize-y text-lg leading-relaxed disabled:opacity-60 relative z-10 custom-scrollbar font-serif"
+            placeholder="Paste your text here to begin reading..."
+          />
+        )}
 
         <div className="flex items-center justify-end border-t border-[var(--border-input)] pt-3 relative z-10">
           <span className="text-xs text-[var(--text-muted)] font-mono bg-[var(--bg-input)] px-2.5 py-1 rounded-md border border-[var(--border-input)] shadow-sm">
@@ -205,12 +228,30 @@ export function DocumentReader({
 
           {showTranscript && (
             <div className="mt-2 pt-4 border-t border-[var(--border-input)] animate-in slide-in-from-top-4 fade-in duration-300">
-              <textarea
-                readOnly
-                value={translatedText || ""}
-                className="w-full min-h-[20vh] bg-transparent border-none text-[var(--text-primary)] text-base leading-relaxed resize-none focus:outline-none custom-scrollbar italic opacity-90"
-                placeholder="The translated text will appear here as it is being processed..."
-              />
+              {isPlaying ? (
+                <div className="w-full min-h-[20vh] max-h-[40vh] overflow-y-auto bg-transparent border-none text-[var(--text-primary)] text-base leading-relaxed focus:outline-none custom-scrollbar italic opacity-90 whitespace-pre-wrap">
+                  {chunkText(translatedText || "", maxChunkSize).map((chunk, index) => (
+                    <span
+                      key={index}
+                      className={cn(
+                        "transition-colors duration-300 rounded-[4px] px-0.5",
+                        index === currentChunk - 1
+                          ? "bg-purple-500/30 text-purple-100 font-medium shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                          : ""
+                      )}
+                    >
+                      {chunk}{" "}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <textarea
+                  readOnly
+                  value={translatedText || ""}
+                  className="w-full min-h-[20vh] bg-transparent border-none text-[var(--text-primary)] text-base leading-relaxed resize-none focus:outline-none custom-scrollbar italic opacity-90"
+                  placeholder="The translated text will appear here as it is being processed..."
+                />
+              )}
             </div>
           )}
         </div>
