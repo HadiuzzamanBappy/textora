@@ -12,15 +12,15 @@ interface HeaderProps {
 export function Header({ theme, toggleTheme, onOpenSettings }: HeaderProps) {
   return (
     <header className="border-b border-[var(--border-bottom)] bg-[var(--bg-header)] backdrop-blur-xl sticky top-0 z-50 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-4xl mx-auto px-4 md:px-0 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl overflow-hidden relative shadow-lg shadow-indigo-500/20 border border-[var(--border-input)] group">
+          <div className="w-9 h-9 relative group flex items-center justify-center">
             <Image
               src="/logo.png"
               alt="Textora Logo"
               fill
               sizes="36px"
-              className="object-cover group-hover:scale-110 transition-transform duration-500"
+              className="object-contain group-hover:scale-110 transition-transform duration-500 drop-shadow-sm"
               priority
             />
           </div>

@@ -1,29 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --bg-main: #020617;
-  --bg-card: rgba(15, 23, 42, 0.4);
-  --border-card: rgba(30, 41, 59, 0.8);
-  --bg-input: rgba(2, 6, 23, 0.6);
-  --border-input: rgba(30, 41, 59, 0.6);
+  --bg-main: #181a1b;
+  --bg-card: rgba(30, 32, 34, 0.7);
+  --border-card: rgba(45, 48, 51, 0.8);
+  --bg-input: rgba(20, 22, 24, 0.6);
+  --border-input: rgba(45, 48, 51, 0.6);
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --bg-header: rgba(2, 6, 23, 0.7);
-  --border-bottom: rgba(15, 23, 42, 0.6);
+  --text-secondary: #a0a0a0;
+  --text-muted: #707070;
+  --bg-header: rgba(24, 26, 27, 0.8);
+  --border-bottom: rgba(45, 48, 51, 0.6);
 }
 
 :root.light {
-  --bg-main: #f8fafc;
+  --bg-main: #fdfbf7;
   --bg-card: rgba(255, 255, 255, 0.8);
-  --border-card: rgba(226, 232, 240, 0.8);
+  --border-card: rgba(235, 232, 224, 0.8);
   --bg-input: rgba(255, 255, 255, 0.9);
-  --border-input: rgba(203, 213, 225, 0.8);
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --bg-header: rgba(255, 255, 255, 0.8);
-  --border-bottom: rgba(226, 232, 240, 0.8);
+  --border-input: rgba(226, 223, 214, 0.8);
+  --text-primary: #2d2a26;
+  --text-secondary: #5c5954;
+  --text-muted: #8c8880;
+  --bg-header: rgba(253, 251, 247, 0.8);
+  --border-bottom: rgba(235, 232, 224, 0.8);
 }
 
 @theme inline {
@@ -36,3 +36,24 @@ body {
   color: var(--text-primary);
   transition: background 0.2s ease, color 0.2s ease;
 }
+
+/* Global Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-input);
+  border-radius: 10px;
+  border: 2px solid var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+

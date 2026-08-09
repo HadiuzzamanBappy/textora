@@ -108,15 +108,6 @@ export function SettingsOffcanvas({
                 </div>
               </div>
             </div>
-
-            {translationProvider === "google" && !process.env.NEXT_PUBLIC_GOOGLE_TRANSLATE_API_KEY && (
-              <div className="flex gap-3 text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
-                <div className="shrink-0 mt-0.5">⚠️</div>
-                <div className="leading-relaxed">
-                  <strong>Missing API Key:</strong> Google Cloud API requires the <code className="font-mono bg-amber-500/20 px-1 rounded">GOOGLE_TRANSLATE_API_KEY</code> environment variable.
-                </div>
-              </div>
-            )}
           </section>
 
           {/* Engine Parameters Section */}

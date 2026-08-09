@@ -45,6 +45,7 @@ export function BottomPlayer({
   targetLang,
   setTargetLang,
   setVoiceLang,
+  voiceLanguages,
   filteredVoices,
   selectedVoice,
   handleVoiceChange,
@@ -55,10 +56,19 @@ export function BottomPlayer({
   resume,
   stop,
 }: BottomPlayerProps) {
+
+  // Filter supported languages to only show ones that the user's browser has a voice for
+  const playableLanguages = voiceLanguages.length > 0
+    ? SUPPORTED_LANGUAGES.filter((lang) => {
+      const primaryCode = lang.code.split("-")[0].toLowerCase();
+      return voiceLanguages.includes(primaryCode);
+    })
+    : SUPPORTED_LANGUAGES;
+
   return (
     <div className="fixed bottom-0 left-0 w-full z-40 px-4 pb-4 pointer-events-none">
-      <div className="max-w-6xl mx-auto w-full pointer-events-auto transition-transform duration-500 transform translate-y-0">
-        
+      <div className="max-w-4xl mx-auto w-full pointer-events-auto transition-transform duration-500 transform translate-y-0">
+
         {/* Progress Bar (Attached to top of player) */}
         {(isPlaying || progress > 0 || isTranslatingChunk) && (
           <div className="w-full bg-[var(--bg-input)] h-1.5 rounded-t-xl overflow-hidden mx-auto shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative z-0 opacity-90">
@@ -76,14 +86,14 @@ export function BottomPlayer({
           "bg-[var(--bg-card)]/90 backdrop-blur-xl border border-[var(--border-card)] p-4 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-500",
           (isPlaying || progress > 0 || isTranslatingChunk) ? "rounded-b-2xl rounded-t-none border-t-0" : "rounded-2xl"
         )}>
-          
+
           {/* Left: Translation Controls */}
-          <div className="flex items-center gap-3 w-full md:w-1/3 min-w-[200px]">
+          <div className="flex items-center justify-center md:justify-start gap-3 w-full md:w-1/3">
             <label className="flex items-center gap-2 cursor-pointer group">
               <div className="relative">
-                <input 
-                  type="checkbox" 
-                  className="sr-only" 
+                <input
+                  type="checkbox"
+                  className="sr-only"
                   checked={translationEnabled}
                   onChange={(e) => setTranslationEnabled(e.target.checked)}
                   disabled={isPlaying || isTranslating}
@@ -93,8 +103,8 @@ export function BottomPlayer({
                   translationEnabled ? "bg-indigo-500" : "bg-[var(--bg-input)] border border-[var(--border-input)]"
                 )}></div>
                 <div className={cn(
-                  "dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300",
-                  translationEnabled ? "transform translate-x-4" : ""
+                  "dot absolute left-1 top-1 w-4 h-4 rounded-full transition-all duration-300 shadow-sm",
+                  translationEnabled ? "transform translate-x-4 bg-white" : "bg-[var(--text-muted)]"
                 )}></div>
               </div>
               <span className={cn(
@@ -116,7 +126,7 @@ export function BottomPlayer({
                   disabled={isPlaying || isTranslating}
                   className="w-full appearance-none bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-primary)] text-xs font-medium rounded-lg pl-3 pr-8 py-1.5 focus:outline-none focus:border-indigo-500/80 cursor-pointer disabled:opacity-50"
                 >
-                  {SUPPORTED_LANGUAGES.map((lang) => (
+                  {playableLanguages.map((lang) => (
                     <option key={`target-${lang.code}`} value={lang.code}>
                       {lang.name}
                     </option>
@@ -163,7 +173,7 @@ export function BottomPlayer({
                     <Play className="w-6 h-6 ml-1" fill="currentColor" />
                   </button>
                 )}
-                
+
                 {/* Visualizer when playing */}
                 <div className="w-10 h-6 flex items-center gap-0.5 justify-center ml-2">
                   {(isPlaying && !isPaused) ? (
@@ -185,17 +195,19 @@ export function BottomPlayer({
           </div>
 
           {/* Right: Voice Settings */}
-          <div className="flex items-center justify-end gap-3 w-full md:w-1/3 min-w-[200px]">
-            
+          <div className="flex items-center justify-center md:justify-end gap-3 w-full md:w-1/3">
+
             {/* Speed Control */}
             <div className="flex items-center gap-2 group/speed cursor-pointer relative">
               <div className="p-2 rounded-lg bg-[var(--bg-input)] border border-[var(--border-input)] text-[var(--text-secondary)] hover:text-indigo-400 transition-colors">
                 <Volume2 className="w-4 h-4" />
               </div>
               {/* Flyout slider */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl p-3 shadow-xl opacity-0 translate-y-2 pointer-events-none group-hover/speed:opacity-100 group-hover/speed:translate-y-0 group-hover/speed:pointer-events-auto transition-all duration-300 w-32">
-                <div className="text-center text-[10px] font-bold text-indigo-400 mb-2">{speechRate.toFixed(1)}x Speed</div>
-                <input type="range" min="0.5" max="2.0" step="0.1" value={speechRate} onChange={handleRateChange} className="w-full h-1.5 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-3 opacity-0 translate-y-2 pointer-events-none group-hover/speed:opacity-100 group-hover/speed:translate-y-0 group-hover/speed:pointer-events-auto transition-all duration-300 w-32 z-50">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl p-3 shadow-xl">
+                  <div className="text-center text-[10px] font-bold text-indigo-400 mb-2">{speechRate.toFixed(1)}x Speed</div>
+                  <input type="range" min="0.5" max="2.0" step="0.1" value={speechRate} onChange={handleRateChange} className="w-full h-1.5 bg-[var(--bg-input)] rounded-lg appearance-none cursor-pointer accent-indigo-500" />
+                </div>
               </div>
             </div>
 

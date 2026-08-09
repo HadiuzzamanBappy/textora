@@ -22,17 +22,22 @@ export class GoogleTranslator implements Translator {
   ): Promise<string> {
     const url = `https://translation.googleapis.com/language/translate/v2?key=${this.apiKey}`;
 
+    const bodyData: { q: string[]; target: string; format: string; source?: string } = {
+      q: [text],
+      target: targetLanguage,
+      format: "text",
+    };
+
+    if (sourceLanguage !== "auto") {
+      bodyData.source = sourceLanguage;
+    }
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        q: [text],
-        target: targetLanguage,
-        source: sourceLanguage,
-        format: "text",
-      }),
+      body: JSON.stringify(bodyData),
     });
 
     if (!response.ok) {

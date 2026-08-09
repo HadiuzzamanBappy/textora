@@ -15,7 +15,7 @@ export default function Home() {
   const [sourceText, setSourceText] = useState(
     "Welcome to Textora. This is a premium text-to-speech engine running directly in your browser. Feel free to adjust the voice rate, choose different voices, and set the text chunk size limit!\n\nThis application splits large text documents automatically so the browser doesn't block. It speaks each sentence sequentially, ensuring a smooth and natural listening experience."
   );
-  
+
   // Try to load persisted state if possible
   const [sourceLang, setSourceLang] = useState("auto");
   const [targetLang, setTargetLang] = useState("en");
@@ -35,74 +35,7 @@ export default function Home() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   // Settings offcanvas open state
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  // Load preferences from local storage on mount
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      try {
-        const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-        if (savedTheme) {
-          setTheme(savedTheme);
-        } else {
-          const isLight = document.documentElement.classList.contains("light");
-          setTheme(isLight ? "light" : "dark");
-        }
-        
-        const savedSourceLang = localStorage.getItem("sourceLang");
-        if (savedSourceLang) setSourceLang(savedSourceLang);
-        
-        const savedTargetLang = localStorage.getItem("targetLang");
-        if (savedTargetLang) setTargetLang(savedTargetLang);
-        
-        const savedVoiceLang = localStorage.getItem("voiceLang");
-        if (savedVoiceLang) setVoiceLang(savedVoiceLang);
-        
-        const savedProvider = localStorage.getItem("translationProvider") as "browser" | "google" | null;
-        if (savedProvider) setTranslationProvider(savedProvider);
-        
-        const savedProviderEnv = process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER as "browser" | "google";
-        if (!savedProvider && savedProviderEnv) {
-          setTranslationProvider(savedProviderEnv);
-        }
-        
-        const savedChunkSize = localStorage.getItem("maxChunkSize");
-        if (savedChunkSize) setMaxChunkSize(parseInt(savedChunkSize, 10));
-
-        const savedTranslationEnabled = localStorage.getItem("translationEnabled");
-        if (savedTranslationEnabled) setTranslationEnabled(savedTranslationEnabled === "true");
-
-      } catch (e) {
-        console.error("Failed to load settings", e);
-      }
-    }, 0);
-
-    return () => clearTimeout(timeoutId);
-  }, []);
-
-  // Save preferences when they change
-  useEffect(() => {
-    localStorage.setItem("sourceLang", sourceLang);
-    localStorage.setItem("targetLang", targetLang);
-    localStorage.setItem("voiceLang", voiceLang);
-    localStorage.setItem("translationProvider", translationProvider);
-    localStorage.setItem("maxChunkSize", maxChunkSize.toString());
-    localStorage.setItem("translationEnabled", translationEnabled.toString());
-  }, [sourceLang, targetLang, voiceLang, translationProvider, maxChunkSize, translationEnabled]);
-
-
-  const toggleTheme = () => {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    if (nextTheme === "dark") {
-      document.documentElement.classList.remove("light");
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.documentElement.classList.add("light");
-      localStorage.setItem("theme", "light");
-    }
-  };
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Sequential Speech synthesiser hook
   const {
@@ -121,6 +54,83 @@ export default function Home() {
     setVoice,
     setRate,
   } = useSpeechSynthesis();
+
+  // Load preferences from local storage on mount
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      try {
+        const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+        if (savedTheme) {
+          setTheme(savedTheme);
+        } else {
+          const isLight = document.documentElement.classList.contains("light");
+          setTheme(isLight ? "light" : "dark");
+        }
+
+        const savedSourceLang = localStorage.getItem("sourceLang");
+        if (savedSourceLang) setSourceLang(savedSourceLang);
+
+        const savedTargetLang = localStorage.getItem("targetLang");
+        if (savedTargetLang) setTargetLang(savedTargetLang);
+
+        const savedVoiceLang = localStorage.getItem("voiceLang");
+        if (savedVoiceLang) setVoiceLang(savedVoiceLang);
+
+        const savedProvider = localStorage.getItem("translationProvider") as "browser" | "google" | null;
+        if (savedProvider) {
+          setTranslationProvider(savedProvider);
+        }
+
+        const savedChunkSize = localStorage.getItem("maxChunkSize");
+        if (savedChunkSize) setMaxChunkSize(parseInt(savedChunkSize, 10));
+
+        const savedTranslationEnabled = localStorage.getItem("translationEnabled");
+        if (savedTranslationEnabled) setTranslationEnabled(savedTranslationEnabled === "true");
+
+        const savedRate = localStorage.getItem("speechRate");
+        if (savedRate) setRate(parseFloat(savedRate));
+
+      } catch (e) {
+        console.error("Failed to load settings", e);
+      } finally {
+        setIsLoaded(true);
+      }
+    }, 0);
+    
+    return () => clearTimeout(timeoutId);
+  }, [setRate]);
+
+  // Save preferences when they change
+  useEffect(() => {
+    if (!isLoaded) return;
+    localStorage.setItem("sourceLang", sourceLang);
+    localStorage.setItem("targetLang", targetLang);
+    localStorage.setItem("voiceLang", voiceLang);
+    localStorage.setItem("translationProvider", translationProvider);
+    localStorage.setItem("maxChunkSize", maxChunkSize.toString());
+    localStorage.setItem("translationEnabled", translationEnabled.toString());
+    localStorage.setItem("speechRate", speechRate.toString());
+    if (selectedVoice) {
+      localStorage.setItem(`selectedVoiceName_${voiceLang}`, selectedVoice.name);
+    }
+  }, [sourceLang, targetLang, voiceLang, translationProvider, isLoaded, maxChunkSize, translationEnabled, speechRate, selectedVoice]);
+
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    if (nextTheme === "dark") {
+      document.documentElement.classList.remove("light");
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("light");
+      localStorage.setItem("theme", "light");
+    }
+  };
+
+
 
   // Show error toast if speech synthesis is not supported
   useEffect(() => {
@@ -155,7 +165,9 @@ export default function Home() {
     if (filteredVoices.length > 0) {
       const currentPrimary = selectedVoice?.lang.split("-")[0].split("_")[0].toLowerCase();
       if (currentPrimary !== voiceLang.toLowerCase()) {
-        setVoice(filteredVoices[0]);
+        const savedVoiceName = localStorage.getItem(`selectedVoiceName_${voiceLang}`);
+        const match = savedVoiceName ? filteredVoices.find(v => v.name === savedVoiceName) : null;
+        setVoice(match || filteredVoices[0]);
       }
     }
   }, [filteredVoices, voiceLang, selectedVoice, setVoice]);
@@ -202,7 +214,7 @@ export default function Home() {
         const translationApi =
           (window as unknown as { translation?: { capabilities: () => Promise<{ canTranslate: (o: { sourceLanguage: string; targetLanguage: string }) => string }>; create: (o: { sourceLanguage: string; targetLanguage: string }) => Promise<{ translate: (t: string) => Promise<string> }> } }).translation ||
           (window as unknown as { ai?: { translator?: { capabilities: () => Promise<{ canTranslate: (o: { sourceLanguage: string; targetLanguage: string }) => string }>; create: (o: { sourceLanguage: string; targetLanguage: string }) => Promise<{ translate: (t: string) => Promise<string> }> } } }).ai?.translator;
-        
+
         if (translationApi && sourceLang !== "auto") {
           const capabilities = await translationApi.capabilities();
           const canTranslate = capabilities.canTranslate({
@@ -264,18 +276,52 @@ export default function Home() {
     }
   };
 
-  // Auto-translate if transcript is shown and text changes (debounced could be added later)
+  // Track previous state to reset translation when inputs change (React recommended pattern)
+  const [prevSourceText, setPrevSourceText] = useState(sourceText);
+  const [prevTargetLang, setPrevTargetLang] = useState(targetLang);
+
+  if (sourceText !== prevSourceText || targetLang !== prevTargetLang) {
+    setPrevSourceText(sourceText);
+    setPrevTargetLang(targetLang);
+    setTranslatedText("");
+  }
+
+  // Auto-translate if transcript is shown and translation is missing
   useEffect(() => {
-    if (translationEnabled && showTranscript && sourceText && !isTranslating) {
+    if (translationEnabled && showTranscript && sourceText.trim() && !isTranslating) {
       if (translatedText === "") {
         const timeoutId = setTimeout(() => {
           handleTranslate();
-        }, 0);
+        }, 500); // 500ms debounce
         return () => clearTimeout(timeoutId);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [translationEnabled, showTranscript]);
+  }, [translationEnabled, showTranscript, translatedText, targetLang, sourceText]);
+
+  // Auto-detect language for voice selection when translation is disabled
+  useEffect(() => {
+    if (translationEnabled || !sourceText.trim()) return;
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const sampleText = sourceText.substring(0, 500); // Only send first 500 chars to save bandwidth
+        const freeUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(sampleText)}`;
+        const res = await fetch(freeUrl);
+        if (res.ok) {
+          const data = await res.json();
+          const detectedLang = data[2]; // Usually returns 'en', 'es', 'fr', etc.
+          if (detectedLang && typeof detectedLang === 'string') {
+            setVoiceLang(detectedLang);
+          }
+        }
+      } catch (e) {
+        console.error("Auto detect failed", e);
+      }
+    }, 1000); // 1-second debounce after typing/pasting
+
+    return () => clearTimeout(timeoutId);
+  }, [sourceText, translationEnabled]);
 
   // Main playback trigger
   const handlePlay = () => {
@@ -287,6 +333,7 @@ export default function Home() {
     }
 
     if (translationEnabled) {
+      setShowTranscript(true); // Automatically expand transcript view when playing translation
       toast.success("Translating & Speaking...", { description: "Processing audio sequentially in the background." });
       speak(sourceText, maxChunkSize, sourceLang, targetLang, translationProvider);
     } else {
@@ -304,15 +351,17 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200 relative overflow-hidden transition-colors duration-500">
+    <main className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200 relative transition-colors duration-500">
       {/* Background ambient glows */}
-      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-indigo-500/10 blur-[150px] pointer-events-none mix-blend-screen" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-purple-500/10 blur-[150px] pointer-events-none mix-blend-screen" />
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-indigo-500/10 blur-[150px] mix-blend-screen" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] rounded-full bg-purple-500/10 blur-[150px] mix-blend-screen" />
+      </div>
 
-      <Header 
-        theme={theme} 
-        toggleTheme={toggleTheme} 
-        onOpenSettings={() => setSettingsOpen(true)} 
+      <Header
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
 
       <SettingsOffcanvas
@@ -336,8 +385,8 @@ export default function Home() {
       />
 
       {/* Main Workspace */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 relative z-10 pb-40">
-        
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col justify-center gap-6 relative z-10 pb-72 md:pb-32">
+
         <DocumentReader
           sourceText={sourceText}
           setSourceText={(text) => {
@@ -351,38 +400,37 @@ export default function Home() {
           showTranscript={showTranscript}
           setShowTranscript={setShowTranscript}
           translationEnabled={translationEnabled}
+          targetLang={targetLang}
         />
 
         {/* PWA / Browser limits diagnostic section */}
-        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-5 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow duration-300 max-w-4xl mx-auto w-full">
-          <details className="group">
-            <summary className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] cursor-pointer select-none flex items-center justify-between p-1 rounded-lg hover:bg-[var(--bg-input)] transition-colors">
-              <span className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-indigo-400" />
-                Platform Limitations & Diagnostics
-              </span>
-              <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="mt-4 text-sm text-[var(--text-secondary)] space-y-4 leading-relaxed border-t border-[var(--border-input)] pt-4">
-              <p>
-                <strong className="text-[var(--text-primary)]">Text-to-Speech (TTS) Engine:</strong> Browser-native audio synthesis runs locally via the Web Speech API. Behavior and features vary by browser and platform:
-              </p>
-              <ul className="pl-5 space-y-2 list-disc marker:text-indigo-500">
-                <li>
-                  <strong className="text-[var(--text-primary)]">iOS Safari / Chrome:</strong> Apple restricts automatic audio playback. Background playback may stall when the screen locks.
-                </li>
-                <li>
-                  <strong className="text-[var(--text-primary)]">Voice Options:</strong> Voices are device-specific. Premium voice models depend on your OS.
-                </li>
-                <li>
-                  <strong className="text-[var(--text-primary)]">Keyless Translation Mode:</strong> Translation utilizes your browser&apos;s native API or falls back to a free provider.
-                </li>
-              </ul>
-            </div>
-          </details>
-        </div>
+        <details className="group bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 max-w-4xl mx-auto w-full overflow-hidden">
+          <summary className="p-5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] cursor-pointer select-none flex items-center justify-between hover:bg-[var(--bg-input)] transition-colors">
+            <span className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-indigo-400" />
+              Platform Limitations & Diagnostics
+            </span>
+            <svg className="w-4 h-4 text-slate-500 group-open:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div className="px-5 pb-5 pt-4 text-sm text-[var(--text-secondary)] space-y-4 leading-relaxed border-t border-[var(--border-input)]">
+            <p>
+              <strong className="text-[var(--text-primary)]">Text-to-Speech (TTS) Engine:</strong> Browser-native audio synthesis runs locally via the Web Speech API. Behavior and features vary by browser and platform:
+            </p>
+            <ul className="pl-5 space-y-2 list-disc marker:text-indigo-500">
+              <li>
+                <strong className="text-[var(--text-primary)]">iOS Safari / Chrome:</strong> Apple restricts automatic audio playback. Background playback may stall when the screen locks.
+              </li>
+              <li>
+                <strong className="text-[var(--text-primary)]">Voice Options:</strong> Voices are device-specific. Premium voice models depend on your OS.
+              </li>
+              <li>
+                <strong className="text-[var(--text-primary)]">Keyless Translation Mode:</strong> Translation utilizes your browser&apos;s native API or falls back to a free provider.
+              </li>
+            </ul>
+          </div>
+        </details>
       </div>
 
       <BottomPlayer
