@@ -183,7 +183,7 @@ export function useSpeechSynthesis() {
       if (sourceLang && targetLang && sourceLang !== targetLang) {
         setState((prev) => ({ ...prev, isTranslatingChunk: true }));
         try {
-          const provider = process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER || "mock";
+          const provider = process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER || "browser";
 
           if (provider === "browser") {
             const translationApi =

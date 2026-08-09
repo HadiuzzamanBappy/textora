@@ -6,50 +6,7 @@ export interface Translator {
   ): Promise<string>;
 }
 
-// 1. Mock Translation Engine (Zero-cost, out-of-the-box fallback)
-export class MockTranslator implements Translator {
-  async translate(
-    text: string,
-    sourceLanguage: string,
-    targetLanguage: string
-  ): Promise<string> {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    if (!text.trim()) {
-      throw new Error("Text to translate cannot be empty.");
-    }
-
-    const mockDb: Record<string, Record<string, string>> = {
-      es: {
-        "welcome to textora.": "Bienvenido a Textora.",
-        "hello": "Hola",
-        "good morning": "Buenos días",
-        "speech synthesis playground": "Lugar de experimentación de síntesis de voz",
-      },
-      fr: {
-        "welcome to textora.": "Bienvenue sur Textora.",
-        "hello": "Bonjour",
-        "good morning": "Bonjour",
-        "speech synthesis playground": "Espace d'expérimentation de synthèse vocale",
-      },
-      de: {
-        "welcome to textora.": "Willkommen bei Textora.",
-        "hello": "Hallo",
-        "good morning": "Guten Morgen",
-        "speech synthesis playground": "Spielplatz für Sprachsynthese",
-      },
-    };
-
-    const cleanText = text.toLowerCase().trim();
-    if (mockDb[targetLanguage]?.[cleanText]) {
-      return mockDb[targetLanguage][cleanText];
-    }
-
-    return `[Mock ${targetLanguage.toUpperCase()}]: ${text}`;
-  }
-}
-
-// 2. Google Translate REST Engine
+// Google Translate REST Engine
 export class GoogleTranslator implements Translator {
   private apiKey: string;
 
@@ -93,19 +50,9 @@ export class GoogleTranslator implements Translator {
 }
 
 export function getTranslator(): Translator {
-  const provider = process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER || "mock";
-
-  switch (provider.toLowerCase()) {
-    case "google": {
-      const apiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
-      if (!apiKey) {
-        console.warn("GOOGLE_TRANSLATE_API_KEY environment variable is not defined. Falling back to MockTranslator.");
-        return new MockTranslator();
-      }
-      return new GoogleTranslator(apiKey);
-    }
-    case "mock":
-    default:
-      return new MockTranslator();
+  const apiKey = process.env.GOOGLE_TRANSLATE_API_KEY;
+  if (!apiKey) {
+    throw new Error("GOOGLE_TRANSLATE_API_KEY environment variable is not defined.");
   }
+  return new GoogleTranslator(apiKey);
 }

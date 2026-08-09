@@ -17,8 +17,8 @@ export default function Home() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationError, setTranslationError] = useState<string | null>(null);
   const [maxChunkSize, setMaxChunkSize] = useState(200);
-  const [translationProvider, setTranslationProvider] = useState<"mock" | "browser" | "google">(
-    (process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER as "mock" | "browser" | "google") || "browser"
+  const [translationProvider, setTranslationProvider] = useState<"browser" | "google">(
+    (process.env.NEXT_PUBLIC_TRANSLATION_PROVIDER as "browser" | "google") || "browser"
   );
 
   // Theme state setup
