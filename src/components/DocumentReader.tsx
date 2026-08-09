@@ -122,7 +122,7 @@ export function DocumentReader({
       {/* Main Document Input */}
       <div
         className={cn(
-          "bg-[var(--bg-card)] border rounded-2xl p-6 backdrop-blur-md shadow-xl flex flex-col gap-4 relative overflow-hidden group transition-all duration-300",
+          "bg-[var(--bg-card)] border rounded-2xl p-4 sm:p-6 backdrop-blur-md shadow-xl flex flex-col gap-4 relative overflow-hidden group transition-all duration-300",
           translationEnabled ? "w-full lg:w-[640px]" : "w-full",
           isDragging ? "border-rose-500/80 bg-rose-500/5 shadow-rose-500/20 scale-[1.01]" : "border-[var(--border-card)] hover:shadow-rose-500/5"
         )}
@@ -164,18 +164,18 @@ export function DocumentReader({
             <button
               onClick={handleUploadClick}
               disabled={isPlaying || isTranslating}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-primary)] hover:text-rose-400 hover:border-rose-500/40 transition-all text-xs font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-primary)] hover:text-rose-400 hover:border-rose-500/40 transition-all text-xs font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Upload className="w-3.5 h-3.5" />
-              Upload File
+              <span className="hidden sm:inline">Upload File</span>
             </button>
             <button
               onClick={handleClear}
               disabled={isPlaying || isTranslating || !sourceText.trim()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-transparent text-[var(--text-secondary)] hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 transition-all text-xs font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-transparent text-[var(--text-secondary)] hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 transition-all text-xs font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Clear
+              <span className="hidden sm:inline">Clear</span>
             </button>
           </div>
         </div>
@@ -197,14 +197,14 @@ export function DocumentReader({
                   return (
                     <span key={index} className="text-[var(--text-primary)] transition-colors duration-300">
                       <span className="opacity-90">{beforeWord}</span>
-                      <span className="bg-rose-500/30 dark:bg-rose-500/40 text-rose-950 dark:text-rose-100 font-bold shadow-[0_0_15px_rgba(244,63,94,0.3)] rounded-[4px] px-0.5 mx-0.5 transition-all duration-150 inline-block">{currentWord}</span>
+                      <span className="text-rose-600 dark:text-rose-400 transition-colors duration-150">{currentWord}</span>
                       <span className="opacity-90">{afterWord} </span>
                     </span>
                   );
                 } else {
-                  // Fallback to chunk highlight if speaking translated text
+                  // Do not track the source text when speaking the translated transcript
                   return (
-                    <span key={index} className="transition-colors duration-300 rounded-[4px] px-0.5 bg-rose-500/20 dark:bg-rose-500/30 text-rose-900 dark:text-rose-100 font-semibold shadow-[0_0_15px_rgba(244,63,94,0.2)]">
+                    <span key={index} className="text-[var(--text-primary)] opacity-60 transition-colors duration-300 px-0.5">
                       {chunk}{" "}
                     </span>
                   );
@@ -231,21 +231,21 @@ export function DocumentReader({
 
         <div className="flex flex-wrap items-center justify-between border-t border-[var(--border-input)] pt-3 relative z-10 gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
+            <span className="text-[9px] sm:text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-1.5 sm:px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
               {sourceLang === "auto" 
                 ? `Detected: ${SUPPORTED_LANGUAGES.find((l) => l.code === voiceLang)?.name || voiceLang}`
                 : SUPPORTED_LANGUAGES.find((l) => l.code === sourceLang)?.name || sourceLang}
             </span>
           </div>
           
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="text-[9px] sm:text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-1.5 sm:px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
               {sourceText.trim() ? sourceText.trim().split(/\s+/).length.toLocaleString() : 0} words
             </span>
-            <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
-              ~{Math.max(1, Math.ceil((sourceText.trim() ? sourceText.trim().split(/\s+/).length : 0) / 150))} min read
+            <span className="text-[9px] sm:text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-1.5 sm:px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
+              ~{Math.max(1, Math.ceil((sourceText.trim() ? sourceText.trim().split(/\s+/).length : 0) / 150))} min
             </span>
-            <span className="text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
+            <span className="text-[9px] sm:text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-1.5 sm:px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
               {sourceText.length.toLocaleString()} chars
             </span>
           </div>
@@ -254,7 +254,7 @@ export function DocumentReader({
 
       {/* Optional Transcript view if translation is enabled */}
       {translationEnabled && (
-        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-6 backdrop-blur-sm shadow-xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300 w-full lg:w-[400px]">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl p-4 sm:p-6 backdrop-blur-sm shadow-xl flex flex-col gap-4 relative overflow-hidden transition-all duration-300 w-full lg:w-[400px]">
 
           <div className="flex items-center justify-between relative z-10">
             <div className="flex items-center gap-2">
@@ -285,7 +285,7 @@ export function DocumentReader({
                       return (
                         <span key={index} className="text-[var(--text-primary)] transition-colors duration-300">
                           <span className="opacity-90">{beforeWord}</span>
-                          <span className="bg-orange-500/30 dark:bg-orange-500/40 text-orange-950 dark:text-orange-100 font-bold shadow-[0_0_15px_rgba(249,115,22,0.3)] rounded-[4px] px-0.5 mx-0.5 transition-all duration-150 inline-block">{currentWord}</span>
+                          <span className="text-orange-600 dark:text-orange-400 transition-colors duration-150">{currentWord}</span>
                           <span className="opacity-90">{afterWord} </span>
                         </span>
                       );
@@ -315,9 +315,9 @@ export function DocumentReader({
             )}
           </div>
 
-          <div className="flex items-center justify-end border-t border-[var(--border-input)] pt-3 relative z-10">
-            <span className="text-xs text-[var(--text-muted)] font-mono bg-[var(--bg-input)] px-2.5 py-1 rounded-md border border-[var(--border-input)] shadow-sm">
-              {(translatedText || "").length.toLocaleString()} chars
+          <div className="flex flex-wrap items-center justify-end border-t border-[var(--border-input)] pt-3 relative z-10">
+            <span className="text-[9px] sm:text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase px-1.5 sm:px-2 py-0.5 rounded-md bg-[var(--bg-input)] border border-[var(--border-input)]">
+              {translatedText ? translatedText.length.toLocaleString() : 0} chars
             </span>
           </div>
         </div>
