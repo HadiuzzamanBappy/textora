@@ -130,7 +130,7 @@ export function BottomPlayer({
                 </button>
 
                 {/* Flyout menu */}
-                <div className={cn("absolute bottom-full left-0 pb-2 opacity-0 translate-y-2 pointer-events-none transition-all duration-200 z-50 w-48", !(isPlaying || isTranslating) && "group-hover/lang:opacity-100 group-hover/lang:translate-y-0 group-hover/lang:pointer-events-auto")}>
+                <div className={cn("absolute bottom-full left-0 pb-2 opacity-0 translate-y-2 pointer-events-none transition-all duration-200 z-50 w-48", !(isPlaying || isTranslating) && "group-hover/lang:opacity-100 group-hover/lang:translate-y-0 group-hover/lang:pointer-events-auto group-focus-within/lang:opacity-100 group-focus-within/lang:translate-y-0 group-focus-within/lang:pointer-events-auto")}>
                   <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-y-auto max-h-60 flex flex-col custom-scrollbar scroll-smooth">
                     {playableLanguages.map((lang) => (
                       <button
@@ -220,7 +220,7 @@ export function BottomPlayer({
                 <Volume2 className="w-4 h-4" />
               </div>
               {/* Flyout slider */}
-              <div className={cn("absolute bottom-full left-1/2 -translate-x-1/2 pb-3 opacity-0 translate-y-2 pointer-events-none transition-all duration-300 w-32 z-50", !(isPlaying || isTranslating) && "group-hover/speed:opacity-100 group-hover/speed:translate-y-0 group-hover/speed:pointer-events-auto")}>
+              <div className={cn("absolute bottom-full left-1/2 -translate-x-1/2 pb-3 opacity-0 translate-y-2 pointer-events-none transition-all duration-300 w-32 z-50", !(isPlaying || isTranslating) && "group-hover/speed:opacity-100 group-hover/speed:translate-y-0 group-hover/speed:pointer-events-auto group-focus-within/speed:opacity-100 group-focus-within/speed:translate-y-0 group-focus-within/speed:pointer-events-auto")}>
                 <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl p-3 shadow-xl">
                   <div className="text-center text-[10px] font-bold text-rose-400 mb-2">{speechRate.toFixed(1)}x Speed</div>
                   <input type="range" min="0.5" max="2.0" step="0.1" value={speechRate} onChange={handleRateChange} className="w-full h-1.5 bg-rose-500/20 rounded-lg appearance-none cursor-pointer accent-rose-500" />
@@ -240,7 +240,7 @@ export function BottomPlayer({
 
               {/* Flyout menu */}
               {(filteredVoices.length > 0 && !isPlaying && !isTranslating) && (
-                <div className="absolute bottom-full right-0 pb-2 opacity-0 translate-y-2 pointer-events-none group-hover/voice:opacity-100 group-hover/voice:translate-y-0 group-hover/voice:pointer-events-auto transition-all duration-200 z-50 w-64">
+                <div className="absolute bottom-full right-0 pb-2 opacity-0 translate-y-2 pointer-events-none group-hover/voice:opacity-100 group-hover/voice:translate-y-0 group-hover/voice:pointer-events-auto group-focus-within/voice:opacity-100 group-focus-within/voice:translate-y-0 group-focus-within/voice:pointer-events-auto transition-all duration-200 z-50 w-64">
                   <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-y-auto max-h-60 flex flex-col custom-scrollbar scroll-smooth">
                     {filteredVoices.map((voice) => (
                       <button
@@ -265,7 +265,6 @@ export function BottomPlayer({
             {/* Export MP3/WAV Button */}
             <div className="relative group/export flex items-center">
               <button
-                onClick={() => handleExport('mp3')}
                 disabled={isPlaying || isTranslating || isExporting || !sourceText.trim()}
                 title="Export Audio"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--border-input)] bg-rose-500 text-white hover:bg-rose-600 transition-all text-xs font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -281,7 +280,7 @@ export function BottomPlayer({
 
               {/* Flyout menu */}
               {(!!sourceText.trim() && !isPlaying && !isTranslating && !isExporting) && (
-                <div className="absolute bottom-full right-0 pb-2 opacity-0 translate-y-2 pointer-events-none group-hover/export:opacity-100 group-hover/export:translate-y-0 group-hover/export:pointer-events-auto transition-all duration-200 z-50">
+                <div className="absolute bottom-full right-0 pb-2 opacity-0 translate-y-2 pointer-events-none group-hover/export:opacity-100 group-hover/export:translate-y-0 group-hover/export:pointer-events-auto group-focus-within/export:opacity-100 group-focus-within/export:translate-y-0 group-focus-within/export:pointer-events-auto transition-all duration-200 z-50">
                   <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-hidden flex flex-col w-max">
                     <button onClick={() => handleExport('mp3')} className="px-4 py-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-input)] text-left flex items-center gap-3 whitespace-nowrap">
                       <span>.mp3 Format</span>

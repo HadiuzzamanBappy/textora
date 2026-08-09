@@ -104,7 +104,7 @@ export function SettingsOffcanvas({
                 </button>
 
                 {/* Flyout menu */}
-                <div className={cn("absolute top-full right-0 pt-2 opacity-0 -translate-y-2 pointer-events-none transition-all duration-200 z-50 w-full", !(isPlaying || isTranslating) && "group-hover/provider:opacity-100 group-hover/provider:translate-y-0 group-hover/provider:pointer-events-auto")}>
+                <div className={cn("absolute top-full right-0 pt-2 opacity-0 -translate-y-2 pointer-events-none transition-all duration-200 z-50 w-full", !(isPlaying || isTranslating) && "group-hover/provider:opacity-100 group-hover/provider:translate-y-0 group-hover/provider:pointer-events-auto group-focus-within/provider:opacity-100 group-focus-within/provider:translate-y-0 group-focus-within/provider:pointer-events-auto")}>
                   <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-hidden flex flex-col">
                     <button
                       onClick={() => setTranslationProvider("browser")}
