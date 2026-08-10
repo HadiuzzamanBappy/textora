@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { Settings, Moon, Sun, Info } from "lucide-react";
 import { cn } from "../utils/cn";
@@ -10,6 +12,23 @@ interface HeaderProps {
 }
 
 export function Header({ theme, toggleTheme, onOpenSettings }: HeaderProps) {
+  const [showInfo, setShowInfo] = useState(false);
+  const infoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (infoRef.current && !infoRef.current.contains(event.target as Node)) {
+        setShowInfo(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
   return (
     <header className="border-b border-[var(--border-bottom)] bg-[var(--bg-header)] backdrop-blur-xl sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-4xl mx-auto px-4 md:px-0 h-16 flex items-center justify-between">
@@ -30,16 +49,28 @@ export function Header({ theme, toggleTheme, onOpenSettings }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="relative group/info flex items-center">
+          <div 
+            className="relative flex items-center" 
+            ref={infoRef}
+            onMouseEnter={() => setShowInfo(true)}
+            onMouseLeave={() => setShowInfo(false)}
+          >
             <button
+              onClick={() => setShowInfo(!showInfo)}
               aria-label="Platform Limitations & Diagnostics"
-              className="p-2.5 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-orange-400 hover:border-orange-500/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.15)] transition-all cursor-pointer group"
+              className={cn(
+                "p-2.5 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-secondary)] hover:text-orange-400 hover:border-orange-500/50 hover:shadow-[0_0_15px_rgba(249,115,22,0.15)] transition-all cursor-pointer group",
+                showInfo && "text-orange-400 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.15)]"
+              )}
             >
-              <Info className="w-4.5 h-4.5 transition-transform duration-500 group-hover:scale-110" />
+              <Info className={cn("w-4.5 h-4.5 transition-transform duration-500 group-hover:scale-110", showInfo && "scale-110")} />
             </button>
             
             {/* Flyout menu */}
-            <div className="absolute top-full right-0 pt-3 opacity-0 -translate-y-2 pointer-events-none group-hover/info:opacity-100 group-hover/info:translate-y-0 group-hover/info:pointer-events-auto transition-all duration-300 z-50 w-80">
+            <div className={cn(
+              "fixed left-4 right-4 top-20 md:absolute md:top-full md:left-auto md:right-0 md:pt-3 opacity-0 -translate-y-2 pointer-events-none transition-all duration-300 z-50 md:w-80",
+              showInfo && "opacity-100 translate-y-0 pointer-events-auto"
+            )}>
               <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-hidden flex flex-col backdrop-blur-xl">
                 <div className="p-4 bg-orange-500/10 border-b border-orange-500/20">
                   <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Settings, X, Globe, Mic, AlignLeft, Check } from "lucide-react";
 import { cn } from "../utils/cn";
 
@@ -37,6 +37,23 @@ export function SettingsOffcanvas({
   isPlaying,
   isTranslating,
 }: SettingsOffcanvasProps) {
+  const [showProvider, setShowProvider] = useState(false);
+  const providerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (providerRef.current && !providerRef.current.contains(event.target as Node)) {
+        setShowProvider(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
   return (
     <>
       {/* Backdrop */}
@@ -92,8 +109,18 @@ export function SettingsOffcanvas({
 
             <div className="flex flex-col gap-2.5">
               <label className="text-sm font-medium text-[var(--text-primary)]">Translation Method</label>
-              <div className="relative group/provider flex items-center">
+              <div 
+                className="relative flex items-center"
+                ref={providerRef}
+                onMouseEnter={() => {
+                  if (!isPlaying && !isTranslating) setShowProvider(true);
+                }}
+                onMouseLeave={() => setShowProvider(false)}
+              >
                 <button
+                  onClick={() => {
+                    if (!isPlaying && !isTranslating) setShowProvider(!showProvider);
+                  }}
                   disabled={isPlaying || isTranslating}
                   className="flex items-center justify-between w-full gap-2 px-4 py-3 rounded-xl border border-[var(--border-input)] bg-[var(--bg-input)] text-[var(--text-primary)] hover:border-rose-500/40 transition-all text-sm font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -104,7 +131,10 @@ export function SettingsOffcanvas({
                 </button>
 
                 {/* Flyout menu */}
-                <div className={cn("absolute top-full right-0 pt-2 opacity-0 -translate-y-2 pointer-events-none transition-all duration-200 z-50 w-full", !(isPlaying || isTranslating) && "group-hover/provider:opacity-100 group-hover/provider:translate-y-0 group-hover/provider:pointer-events-auto group-focus-within/provider:opacity-100 group-focus-within/provider:translate-y-0 group-focus-within/provider:pointer-events-auto")}>
+                <div className={cn(
+                  "absolute top-full right-0 pt-2 opacity-0 -translate-y-2 pointer-events-none transition-all duration-200 z-50 w-full",
+                  (!(isPlaying || isTranslating) && showProvider) && "opacity-100 translate-y-0 pointer-events-auto"
+                )}>
                   <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-hidden flex flex-col">
                     <button
                       onClick={() => setTranslationProvider("browser")}
