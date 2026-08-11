@@ -12,6 +12,7 @@ interface BottomPlayerProps {
   isPlaying: boolean;
   isPaused: boolean;
   progress: number;
+  encodedProgress?: number;
   sourceText: string;
   isTranslating: boolean;
   isTranslatingChunk: boolean;
@@ -32,13 +33,14 @@ interface BottomPlayerProps {
   pause: () => void;
   resume: () => void;
   stop: () => void;
-  handleExport: (format: 'mp3' | 'wav') => void;
+  onOpenExportModal: () => void;
 }
 
 export function BottomPlayer({
   isPlaying,
   isPaused,
   progress,
+  encodedProgress,
   sourceText,
   isTranslating,
   isTranslatingChunk,
@@ -58,7 +60,7 @@ export function BottomPlayer({
   pause,
   resume,
   stop,
-  handleExport,
+  onOpenExportModal,
 }: BottomPlayerProps) {
 
   // Filter supported languages to only show ones that the user's browser has a voice for
@@ -72,12 +74,10 @@ export function BottomPlayer({
   const [showSpeed, setShowSpeed] = useState(false);
   const [showLang, setShowLang] = useState(false);
   const [showVoice, setShowVoice] = useState(false);
-  const [showExport, setShowExport] = useState(false);
   
   const speedRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
   const voiceRef = useRef<HTMLDivElement>(null);
-  const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -85,7 +85,6 @@ export function BottomPlayer({
       if (speedRef.current && !speedRef.current.contains(node)) setShowSpeed(false);
       if (langRef.current && !langRef.current.contains(node)) setShowLang(false);
       if (voiceRef.current && !voiceRef.current.contains(node)) setShowVoice(false);
-      if (exportRef.current && !exportRef.current.contains(node)) setShowExport(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("touchstart", handleClickOutside);
@@ -102,9 +101,18 @@ export function BottomPlayer({
         {/* Progress Bar (Attached to top of player) */}
         {(isPlaying || progress > 0 || isTranslatingChunk) && (
           <div className="w-full bg-[var(--bg-input)] h-1.5 rounded-t-xl overflow-hidden mx-auto shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative z-0 opacity-90">
+            {/* Encoded Progress Background */}
+            {encodedProgress !== undefined && encodedProgress > 0 && (
+              <div 
+                className="absolute top-0 left-0 h-full bg-rose-500/20 transition-all duration-300 ease-out"
+                style={{ width: `${encodedProgress}%` }}
+              />
+            )}
+            
+            {/* Spoken Progress */}
             <div
               className={cn(
-                "h-full transition-all duration-300 ease-out",
+                "h-full transition-all duration-300 ease-out relative z-10",
                 progress === 100 ? "bg-rose-500" : "bg-gradient-to-r from-rose-500 via-orange-500 to-rose-500 bg-[length:200%_100%] animate-[gradient_2s_linear_infinite]"
               )}
               style={{ width: `${progress}%` }}
@@ -334,18 +342,9 @@ export function BottomPlayer({
             </div>
 
             {/* Export MP3/WAV Button */}
-            <div 
-              className="relative flex items-center"
-              ref={exportRef}
-              onMouseEnter={() => {
-                if (!!sourceText.trim() && !isPlaying && !isTranslating && !isExporting) setShowExport(true);
-              }}
-              onMouseLeave={() => setShowExport(false)}
-            >
+            <div className="relative flex items-center">
               <button
-                onClick={() => {
-                  if (!!sourceText.trim() && !isPlaying && !isTranslating && !isExporting) setShowExport(!showExport);
-                }}
+                onClick={onOpenExportModal}
                 disabled={isPlaying || isTranslating || isExporting || !sourceText.trim()}
                 title="Export Audio"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--border-input)] bg-rose-500 text-white hover:bg-rose-600 transition-all text-xs font-medium cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -356,27 +355,7 @@ export function BottomPlayer({
                   <Download className="w-3.5 h-3.5" />
                 )}
                 <span className="hidden sm:inline">{isExporting ? "Exporting..." : "Export"}</span>
-                <ChevronUp className="w-3.5 h-3.5 ml-0.5 opacity-80" />
               </button>
-
-              {/* Flyout menu */}
-              {(!!sourceText.trim() && !isPlaying && !isTranslating && !isExporting) && (
-                <div className={cn(
-                  "absolute bottom-full right-0 pb-2 opacity-0 translate-y-2 pointer-events-none transition-all duration-200 z-50",
-                  showExport && "opacity-100 translate-y-0 pointer-events-auto"
-                )}>
-                  <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-hidden flex flex-col w-max">
-                    <button onClick={() => handleExport('mp3')} className="px-4 py-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-input)] text-left flex items-center gap-3 whitespace-nowrap">
-                      <span>.mp3 Format</span>
-                      <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-input)] px-1.5 py-0.5 rounded-md ml-auto">Fast</span>
-                    </button>
-                    <button onClick={() => handleExport('wav')} className="px-4 py-3 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-input)] text-left flex items-center gap-3 border-t border-[var(--border-input)] whitespace-nowrap">
-                      <span>.wav Format</span>
-                      <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-input)] px-1.5 py-0.5 rounded-md ml-auto">Lossless</span>
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
           </div>

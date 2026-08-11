@@ -318,12 +318,13 @@ export function useSpeechSynthesis() {
       // Fallback state for Android tracking bug where onboundary never fires
       let hasReceivedBoundary = false;
       const expectedDurationMs = (textToSpeak.length / 15) * 1000 / state.speechRate;
-      const startTime = Date.now();
+      let startTime = Date.now();
       let totalPausedTime = 0;
       let lastPauseTime = 0;
 
       utterance.onstart = () => {
         if (session !== sessionRef.current) return;
+        startTime = Date.now();
         
         if (isPausedRef.current) {
           synth.pause();
@@ -334,23 +335,23 @@ export function useSpeechSynthesis() {
 
         if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
         if (isAndroidRef.current) {
-          fallbackTimerRef.current = setInterval(() => {
-            if (hasReceivedBoundary || synth.paused) return;
-            const elapsed = Date.now() - startTime - totalPausedTime;
-            let estimatedRatio = elapsed / expectedDurationMs;
-            if (estimatedRatio > 0.99) estimatedRatio = 0.99;
-            
-            const estimatedCharIndex = Math.floor(estimatedRatio * textToSpeak.length);
-            const chunkProgress = estimatedCharIndex / Math.max(1, textToSpeak.length);
-            const totalChunks = chunksRef.current.length;
-            const overallProgress = Math.round(((index + chunkProgress) / totalChunks) * 100);
+        fallbackTimerRef.current = setInterval(() => {
+          if (hasReceivedBoundary || synth.paused) return;
+          const elapsed = Date.now() - startTime - totalPausedTime;
+          let estimatedRatio = elapsed / expectedDurationMs;
+          if (estimatedRatio > 0.99) estimatedRatio = 0.99;
+          
+          const estimatedCharIndex = Math.floor(estimatedRatio * textToSpeak.length);
+          const chunkProgress = estimatedCharIndex / Math.max(1, textToSpeak.length);
+          const totalChunks = chunksRef.current.length;
+          const overallProgress = Math.round(((index + chunkProgress) / totalChunks) * 100);
 
-            setState((prev) => ({
-              ...prev,
-              currentCharIndex: estimatedCharIndex,
-              progress: overallProgress
-            }));
-          }, 200);
+          setState((prev) => ({
+            ...prev,
+            currentCharIndex: estimatedCharIndex,
+            progress: overallProgress
+          }));
+        }, 200);
         }
       };
 
@@ -394,9 +395,15 @@ export function useSpeechSynthesis() {
 
       utterance.onboundary = (event) => {
         if (session !== sessionRef.current) return;
-        if (event.name === "word" || event.name === "sentence") {
+        
+        // Only a true "word" boundary means the engine supports word tracking.
+        // Many non-English voices only fire a "sentence" boundary at charIndex 0, which falsely kills our fallback.
+        if (event.name === "word") {
           hasReceivedBoundary = true;
           if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
+        }
+
+        if (event.name === "word" || event.name === "sentence") {
           const chunkProgress = event.charIndex / Math.max(1, textToSpeak.length);
           const totalChunks = chunksRef.current.length;
           const overallProgress = Math.round(((index + chunkProgress) / totalChunks) * 100);

@@ -52,8 +52,6 @@ export function Header({ theme, toggleTheme, onOpenSettings }: HeaderProps) {
           <div 
             className="relative flex items-center" 
             ref={infoRef}
-            onMouseEnter={() => setShowInfo(true)}
-            onMouseLeave={() => setShowInfo(false)}
           >
             <button
               onClick={() => setShowInfo(!showInfo)}

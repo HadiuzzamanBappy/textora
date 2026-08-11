@@ -69,7 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col bg-slate-950 text-slate-100">
         <ServiceWorkerRegister />
         {children}
-        <Toaster position="bottom-right" richColors theme="system" />
+        <Toaster position="top-right" richColors theme="system" />
       </body>
     </html>
   );

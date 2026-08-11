@@ -11,6 +11,7 @@ import { BottomPlayer } from "../components/BottomPlayer";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { usePreferences } from "../hooks/usePreferences";
 import { convertMp3ToWav } from "../utils/audioConverter";
+import { ExportModal, ExportStatus } from "../components/ExportModal";
 
 const getLanguageName = (code: string) => {
   const map: Record<string, string> = {
@@ -32,8 +33,9 @@ export default function Home() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   
-  // Settings offcanvas open state
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportStatus, setExportStatus] = useState<ExportStatus>('idle');
 
   // Sequential Speech synthesiser hook
   const {
@@ -43,6 +45,7 @@ export default function Home() {
     selectedVoice,
     progress,
     currentChunk,
+    totalChunks,
     isTranslatingChunk,
     isSupported,
     currentCharIndex,
@@ -268,7 +271,7 @@ export default function Home() {
   }, [sourceText, translationEnabled, speak, maxChunkSize, sourceLang, targetLang, translationProvider, handleTranslate, translatedText]);
 
   // Handle Export MP3/WAV
-  const handleExport = React.useCallback(async (format: 'mp3' | 'wav') => {
+  const handleExport = React.useCallback(async (format: 'mp3' | 'wav', gender: 'MALE' | 'FEMALE') => {
     const textToExport = translationEnabled && translatedText ? translatedText : sourceText;
     const langToExport = translationEnabled ? targetLang : voiceLang;
 
@@ -283,10 +286,7 @@ export default function Home() {
     }
 
     setIsExporting(true);
-    const toastMessage = format === 'wav' 
-      ? "Generating high-quality WAV audio... (this may take a moment)"
-      : "Generating high-quality MP3 audio...";
-    const toastId = toast.loading(toastMessage);
+    setExportStatus('exporting');
 
     try {
       const response = await fetch('/api/export', {
@@ -295,6 +295,7 @@ export default function Home() {
         body: JSON.stringify({
           text: textToExport,
           language: langToExport,
+          gender: gender,
         }),
       });
 
@@ -320,10 +321,16 @@ export default function Home() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast.success(`${format.toUpperCase()} generated and downloaded successfully!`, { id: toastId });
+      setExportStatus('success');
+      setTimeout(() => {
+        setIsExportModalOpen(false);
+        setTimeout(() => setExportStatus('idle'), 300);
+      }, 1500);
+
     } catch (error) {
+      setExportStatus('idle');
       const message = error instanceof Error ? error.message : "An unexpected error occurred.";
-      toast.error("Export Failed", { id: toastId, description: message });
+      toast.error("Export Failed", { description: message });
     } finally {
       setIsExporting(false);
     }
@@ -427,6 +434,7 @@ export default function Home() {
           isPlaying={isPlaying}
           isPaused={isPaused}
           progress={progress}
+          encodedProgress={(currentChunk / Math.max(1, totalChunks)) * 100}
           sourceText={sourceText}
           isTranslating={isTranslating}
           isTranslatingChunk={isTranslatingChunk}
@@ -447,6 +455,13 @@ export default function Home() {
           pause={pause}
           resume={resume}
           stop={stop}
+          onOpenExportModal={() => setIsExportModalOpen(true)}
+        />
+
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          exportStatus={exportStatus}
           handleExport={handleExport}
         />
       </main>

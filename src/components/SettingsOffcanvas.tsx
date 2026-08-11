@@ -38,7 +38,20 @@ export function SettingsOffcanvas({
   isTranslating,
 }: SettingsOffcanvasProps) {
   const [showProvider, setShowProvider] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(true);
   const providerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch('/api/config/tts')
+      .then(res => res.json())
+      .then(data => {
+        setHasApiKey(data.hasKey);
+        if (!data.hasKey && translationProvider === 'google') {
+          setTranslationProvider('browser');
+        }
+      })
+      .catch(console.error);
+  }, [translationProvider, setTranslationProvider]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
@@ -109,13 +122,9 @@ export function SettingsOffcanvas({
 
             <div className="flex flex-col gap-2.5">
               <label className="text-sm font-medium text-[var(--text-primary)]">Translation Method</label>
-              <div 
+              <div
                 className="relative flex items-center"
                 ref={providerRef}
-                onMouseEnter={() => {
-                  if (!isPlaying && !isTranslating) setShowProvider(true);
-                }}
-                onMouseLeave={() => setShowProvider(false)}
               >
                 <button
                   onClick={() => {
@@ -137,7 +146,10 @@ export function SettingsOffcanvas({
                 )}>
                   <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-xl overflow-hidden flex flex-col">
                     <button
-                      onClick={() => setTranslationProvider("browser")}
+                      onClick={() => {
+                        setTranslationProvider("browser");
+                        setShowProvider(false);
+                      }}
                       className={cn(
                         "flex items-center w-full px-4 py-3 text-sm font-medium text-left transition-colors",
                         translationProvider === "browser"
@@ -145,18 +157,27 @@ export function SettingsOffcanvas({
                           : "text-[var(--text-primary)] hover:bg-[var(--bg-input)]"
                       )}
                     >
-                      <span className="truncate w-full">Web Translator (Keyless)</span>
+                      <span className="truncate w-full">Web Translator</span>
                     </button>
                     <button
-                      onClick={() => setTranslationProvider("google")}
+                      onClick={() => {
+                        setTranslationProvider("google");
+                        setShowProvider(false);
+                      }}
+                      disabled={!hasApiKey}
                       className={cn(
-                        "flex items-center w-full px-4 py-3 text-sm font-medium text-left transition-colors border-t border-[var(--border-input)]",
+                        "flex items-center justify-between w-full px-4 py-3 text-sm font-medium text-left transition-colors border-t border-[var(--border-input)]",
                         translationProvider === "google"
                           ? "bg-rose-500 text-white hover:bg-rose-600"
-                          : "text-[var(--text-primary)] hover:bg-[var(--bg-input)]"
+                          : "text-[var(--text-primary)] hover:bg-[var(--bg-input)] disabled:opacity-50 disabled:cursor-not-allowed"
                       )}
                     >
-                      <span className="truncate w-full">Google Cloud API (Requires Key)</span>
+                      <span className="truncate">Google Cloud</span>
+                      {!hasApiKey && (
+                        <span className="text-[9px] font-bold text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0 ml-2">
+                          Key Req
+                        </span>
+                      )}
                     </button>
                   </div>
                 </div>
