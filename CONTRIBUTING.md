@@ -53,15 +53,22 @@ Make your changes to the codebase.
   - To run the development server: `npm run dev`
   - To run existing tests: `npm run test`
 
-#### Step 5: Commit
-Commit your changes with a clear and descriptive commit message:
+#### Step 5: Document Your Changes (Required)
+We use [Changesets](https://github.com/changesets/changesets) to automatically generate changelogs and versions. Before committing, you must generate a changeset:
+```bash
+npm run changeset
+```
+Follow the interactive prompts to describe your change (patch, minor, or major). This will create a small `.md` file in the `.changeset` folder.
+
+#### Step 6: Commit
+Commit your code changes **along with** the newly generated `.changeset` markdown file:
 ```bash
 git add .
 git commit -m "feat: add support for new translation provider"
 ```
 *(We recommend following the [Conventional Commits](https://www.conventionalcommits.org/) specification).*
 
-#### Step 6: Push and Create a Pull Request
+#### Step 7: Push and Create a Pull Request
 1. Push your branch to your forked repository:
    ```bash
    git push origin your-branch-name

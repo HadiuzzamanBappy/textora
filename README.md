@@ -80,3 +80,15 @@ Verify the live deployment on mobile and desktop:
 3. **Playback Controls & Export**:
    - Use the **Bottom Player** to pause, adjust speech speed, and change voices mid-speech.
    - Verify the audio export feature successfully generates an `.mp3` or `.wav` file of the translated text.
+
+---
+
+## 5. Versioning & Releases (For Maintainers)
+
+Textora uses [Changesets](https://github.com/changesets/changesets) to automate semantic versioning and changelog generation.
+
+When open-source contributors submit features, they generate a changeset file via `npm run changeset`. When you merge their PRs into the `main` branch, simply run:
+```bash
+npm run version
+```
+This command automatically consumes all pending changesets, bumps the `package.json` version accordingly, and generates a beautifully formatted `CHANGELOG.md` file!
