@@ -40,6 +40,8 @@ export function useSpeechSynthesis() {
   const fallbackTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isAndroidRef = useRef<boolean>(false);
   const iosUnlockedRef = useRef<boolean>(false);
+  const isPausedRef = useRef<boolean>(false);
+  const pendingUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     if (typeof navigator !== "undefined") {
@@ -122,6 +124,7 @@ export function useSpeechSynthesis() {
   const stop = useCallback(() => {
     const synth = getSynth();
     sessionRef.current++; // Invalidate active async callbacks
+    isPausedRef.current = false;
     
     if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
     if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
@@ -132,6 +135,7 @@ export function useSpeechSynthesis() {
     chunksRef.current = [];
     currentIndexRef.current = 0;
     utteranceRef.current = null;
+    pendingUtteranceRef.current = null;
 
     setState((prev) => ({
       ...prev,
@@ -149,6 +153,7 @@ export function useSpeechSynthesis() {
     const synth = getSynth();
     if (!synth) return;
     if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
+    isPausedRef.current = true;
     synth.pause();
     setState((prev) => ({ ...prev, isPaused: true }));
   }, [getSynth]);
@@ -156,7 +161,26 @@ export function useSpeechSynthesis() {
   const resume = useCallback(() => {
     const synth = getSynth();
     if (!synth) return;
-    synth.resume();
+    isPausedRef.current = false;
+    
+    if (pendingUtteranceRef.current) {
+      synth.speak(pendingUtteranceRef.current);
+      pendingUtteranceRef.current = null;
+    } else {
+      synth.resume();
+    }
+
+    // Restart keep alive timer if needed
+    if (!isAndroidRef.current) {
+      if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
+      keepAliveTimerRef.current = setInterval(() => {
+        if (synth && synth.speaking && !isPausedRef.current) {
+          synth.pause();
+          synth.resume();
+        }
+      }, 10000);
+    }
+
     setState((prev) => ({ ...prev, isPaused: false, isPlaying: true }));
   }, [getSynth]);
 
@@ -274,7 +298,7 @@ export function useSpeechSynthesis() {
       if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
       if (!isAndroidRef.current) {
         keepAliveTimerRef.current = setInterval(() => {
-          if (synth && synth.speaking) {
+          if (synth && synth.speaking && !isPausedRef.current) {
             synth.pause();
             synth.resume();
           }
@@ -283,6 +307,11 @@ export function useSpeechSynthesis() {
 
       if (state.selectedVoice) {
         utterance.voice = state.selectedVoice;
+        utterance.lang = state.selectedVoice.lang;
+      } else if (targetLang) {
+        utterance.lang = targetLang;
+      } else if (sourceLang && sourceLang !== "auto") {
+        utterance.lang = sourceLang;
       }
       utterance.rate = state.speechRate;
 
@@ -295,7 +324,13 @@ export function useSpeechSynthesis() {
 
       utterance.onstart = () => {
         if (session !== sessionRef.current) return;
-        setState((prev) => ({ ...prev, isPlaying: true, isPaused: false, currentCharIndex: 0 }));
+        
+        if (isPausedRef.current) {
+          synth.pause();
+          setState((prev) => ({ ...prev, isPlaying: true, isPaused: true, currentCharIndex: 0 }));
+        } else {
+          setState((prev) => ({ ...prev, isPlaying: true, isPaused: false, currentCharIndex: 0 }));
+        }
 
         if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
         if (isAndroidRef.current) {
@@ -374,7 +409,11 @@ export function useSpeechSynthesis() {
         }
       };
 
-      synth.speak(utterance);
+      if (isPausedRef.current) {
+        pendingUtteranceRef.current = utterance;
+      } else {
+        synth.speak(utterance);
+      }
     },
     [getSynth, state.selectedVoice, state.speechRate]
   );
@@ -401,6 +440,8 @@ export function useSpeechSynthesis() {
         iosUnlockedRef.current = true;
       }
 
+      isPausedRef.current = false;
+      pendingUtteranceRef.current = null;
       synth.cancel();
       if (keepAliveTimerRef.current) clearInterval(keepAliveTimerRef.current);
 
